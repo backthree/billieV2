@@ -1,6 +1,7 @@
 // 대여 상태 상수
 export const RENTAL_STATUS = {
   CREATED: "CREATED", // 1. 예약 확정 후 대여 생성 시점
+  CONFIRMED: "CONFIRMED", // 2. 예약 확정 시점
   REMITTANCE_REQUESTED: "REMITTANCE_REQUESTED", // 3.Renter의 결제(송금) 요청 시점
   BEFORE_PHOTO_ANALYZED: "BEFORE_PHOTO_ANALYZED", // 2.대여 시 Owner가 물품 사진 업로드한 후 시점
   REMITTANCE_COMPLETED: "REMITTANCE_COMPLETED", // 4.Renter의 결제(송금) 완료 시점

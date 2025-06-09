@@ -43,21 +43,28 @@ export default function useReservationWebSocket() {
       const response = await fetchOwnerReservations(userId);
 
       // API 응답 데이터 형식 변환
-      const formattedReservations = response.map((reservation: any) => ({
-        reservationId: reservation.reservationId,
-        postTitle: reservation.title || reservation.postTitle,
-        postProductImage: reservation.productImageUrl || reservation.postProductImage,
-        postProductImages: reservation.productImageUrl || reservation.postProductImage,
-        startDate: reservation.startDate,
-        endDate: reservation.endDate,
-        rentalFee: reservation.rentalFee,
-        deposit: reservation.deposit,
-        status: reservation.reservationStatus || reservation.status,
-        ownerName: reservation.ownerName || '소유자',
-        ownerProfileImageUrl: reservation.ownerProfileImageUrl || '/images/profileimg.png',
-        renterName: reservation.renterName || '렌터',
-        renterProfileImageUrl: reservation.renterProfileImageUrl || '/images/profileimg.png'
-      }));
+      const reservations = Array.isArray(response) ? response : response.content || [];
+      const formattedReservations = reservations.map((reservation: any) => {
+        if (!reservation.reservationId) {
+          console.warn('예약 ID가 없는 데이터 발견:', reservation);
+          return null;
+        }
+        return {
+          reservationId: reservation.reservationId,
+          postTitle: reservation.title || reservation.postTitle,
+          postProductImage: reservation.productImageUrl || reservation.postProductImage,
+          postProductImages: reservation.productImageUrl || reservation.postProductImage,
+          startDate: reservation.startDate,
+          endDate: reservation.endDate,
+          rentalFee: reservation.rentalFee,
+          deposit: reservation.deposit,
+          status: reservation.reservationStatus || reservation.status,
+          ownerName: reservation.ownerName || '소유자',
+          ownerProfileImageUrl: reservation.ownerProfileImageUrl || '/images/profileimg.png',
+          renterName: reservation.renterName || '렌터',
+          renterProfileImageUrl: reservation.renterProfileImageUrl || '/images/profileimg.png'
+        };
+      }).filter(Boolean); // null 값 제거
 
       setPendingReservations(formattedReservations);
       setError(null);
@@ -83,8 +90,8 @@ export default function useReservationWebSocket() {
     let client: Client | null = null;
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://k12e205.p.ssafy.io:8081';
-      const socket = new SockJS(`${baseUrl}/ws-reservation`);
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const socket = new SockJS(`${baseUrl}/ws-rental`);
 
       // STOMP 클라이언트 생성
       client = new Client({
@@ -104,15 +111,17 @@ export default function useReservationWebSocket() {
         setIsConnected(true);
         console.log('Connected to WebSocket');
 
-        client?.subscribe(`/topic/reservation/${uuid}`, (message) => {
+        client?.subscribe(`/topic/rental-reservation/${uuid}/status`, (message) => {
           try {
             const reservationData = JSON.parse(message.body);
+            console.log('Received reservation data:', reservationData);
 
             // 웹소켓으로 받은 데이터 형식 변환
             const formattedReservation = {
               reservationId: reservationData.reservationId,
               postTitle: reservationData.postTitle || reservationData.title,
               postProductImage: reservationData.postProductImage || reservationData.productImageUrl,
+              postProductImages: reservationData.productImageUrl || reservationData.postProductImage,
               startDate: reservationData.startDate,
               endDate: reservationData.endDate,
               rentalFee: reservationData.rentalFee,
@@ -126,7 +135,6 @@ export default function useReservationWebSocket() {
             };
 
             handleReservationUpdate(formattedReservation);
-            console.log(formattedReservation);
           } catch (e) {
             console.error('메시지 처리 오류:', e);
           }
@@ -166,21 +174,24 @@ export default function useReservationWebSocket() {
 
   // 예약 상태 업데이트 처리
   const handleReservationUpdate = (updatedReservation: ReservationData) => {
-    if (updatedReservation.status !== 'PENDING') {
-      // PENDING이 아니면 목록에서 제거
-      setPendingReservations(prev =>
-        prev.filter(res => res.reservationId !== updatedReservation.reservationId)
-      );
-    } else {
-      // 새 예약이면 추가 (중복 방지)
-      setPendingReservations(prev => {
+    console.log('Handling reservation update:', updatedReservation);
+    
+    setPendingReservations(prev => {
+      // 현재 예약이 PENDING 상태인 경우에만 처리
+      if (updatedReservation.status === 'PENDING') {
+        // 이미 존재하는지 확인
         const exists = prev.some(res => res.reservationId === updatedReservation.reservationId);
         if (!exists) {
+          console.log('Adding new pending reservation:', updatedReservation);
           return [...prev, updatedReservation];
         }
-        return prev;
-      });
-    }
+      } else {
+        // PENDING이 아닌 경우 제거
+        console.log('Removing non-pending reservation:', updatedReservation);
+        return prev.filter(res => res.reservationId !== updatedReservation.reservationId);
+      }
+      return prev;
+    });
   };
 
   // 예약 확정 

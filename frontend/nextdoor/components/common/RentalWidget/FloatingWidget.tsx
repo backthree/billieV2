@@ -160,7 +160,7 @@ const FloatingWidget: React.FC = () => {
     if (isOwner) {
       return (
         (rental.process === "BEFORE_RENTAL" &&
-          rental.detailStatus === "CREATED") ||
+          (rental.detailStatus === "CREATED" || rental.detailStatus === "CONFIRMED")) ||
         (rental.process === "RETURNED" &&
           rental.detailStatus === "RENTAL_PERIOD_ENDED") ||
         (rental.process === "RETURNED" &&
@@ -303,7 +303,8 @@ const FloatingWidget: React.FC = () => {
     const diffDays =
       Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    if (isOwner && process === "BEFORE_RENTAL" && detailStatus === "CREATED") {
+    if (isOwner && process === "BEFORE_RENTAL" && 
+        (detailStatus === "CREATED" || detailStatus === "CONFIRMED")) {
       const baseCharge = rental.rentalDetail?.charge || 0;
       const totalCharge = baseCharge * diffDays;
 
@@ -418,7 +419,7 @@ const FloatingWidget: React.FC = () => {
     if (isOwner) {
       switch (process) {
         case "BEFORE_RENTAL":
-          return detailStatus === "CREATED"
+          return detailStatus === "CONFIRMED"
             ? "안심 결제 요청"
             : "안심 결제 요청됨";
         case "RENTAL_IN_ACTIVE":
@@ -589,9 +590,9 @@ const FloatingWidget: React.FC = () => {
                   <p>예약 정보 로딩 중...</p>
                 </div>
               ) : pendingReservations.length > 0 ? (
-                [...pendingReservations].reverse().map((reservation: any) => (
+                [...pendingReservations].reverse().map((reservation: any, index: number) => (
                   <ReservationActionButton
-                    key={`reservation-${reservation.reservationId}`}
+                    key={`reservation-${reservation.reservationId || index}`}
                     id={reservation.reservationId}
                     title={reservation.postTitle}
                     productImage={
@@ -637,7 +638,7 @@ const FloatingWidget: React.FC = () => {
                   const isPaymentRequestButton =
                     isOwner &&
                     rental.process === "BEFORE_RENTAL" &&
-                    rental.detailStatus === "CREATED";
+                    rental.detailStatus === "CONFIRMED";
 
                   return (
                     <RentalActionButton

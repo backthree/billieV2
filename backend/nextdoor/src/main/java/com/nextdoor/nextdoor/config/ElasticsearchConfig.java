@@ -13,12 +13,6 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 @EnableElasticsearchRepositories(basePackages = "com.nextdoor.nextdoor.domain.post.search")
 public class ElasticsearchConfig extends ElasticsearchConfiguration {
 
-    @Value("${elasticsearch.index.posts.name}")
-    private String postsIndexName;
-
-    @Value("${elasticsearch.index.posts.alias}")
-    private String postsIndexAlias;
-
     @Value("${spring.elasticsearch.uris:localhost:9200}")
     private String elasticsearchUri;
 

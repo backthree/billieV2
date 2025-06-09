@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.chat.dto;
 
-import com.nextdoor.nextdoor.domain.rental.domain.RentalProcess;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.RentalReservationProcess;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,5 +15,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RentalDto {
     private Long rentalId;
-    private RentalProcess rentalProcess;
+    private RentalReservationProcess rentalReservationProcess;
 }

@@ -5,10 +5,12 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.*;
 import lombok.*;
 
-@Document(indexName = "#{@elasticsearchConfig.getPostsIndexName()}")
-@Setting(settingPath = "elasticsearch/post-settings.json")
-@Mapping(mappingPath = "elasticsearch/post-mapping.json")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Document(indexName = "posts")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PostDocument {
 
   @Id

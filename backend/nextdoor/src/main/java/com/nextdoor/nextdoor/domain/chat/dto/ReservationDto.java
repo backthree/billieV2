@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.chat.dto;
 
-import com.nextdoor.nextdoor.domain.reservation.enums.ReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.RentalReservationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ReservationDto {
     private Long id;
-    private ReservationStatus status;
+    private RentalReservationStatus status;
     private Long rentalId;
 }

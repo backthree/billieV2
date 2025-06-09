@@ -1,9 +1,9 @@
 package com.nextdoor.nextdoor.query;
 
 import com.nextdoor.nextdoor.common.Adapter;
-import com.nextdoor.nextdoor.domain.rental.port.ReservationQueryPort;
-import com.nextdoor.nextdoor.domain.rental.service.dto.ReservationDto;
-import com.nextdoor.nextdoor.domain.reservation.domain.QReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.port.ReservationQueryPort;
+import com.nextdoor.nextdoor.domain.rentalreservation.service.dto.ReservationDto;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.QRentalReservation;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import java.util.Optional;
 public class RentalReservationQueryAdapter implements ReservationQueryPort {
 
     private final JPAQueryFactory queryFactory;
-    private final QReservation reservation = QReservation.reservation;
+    private final QRentalReservation rental = QRentalReservation.rentalReservation;
 
     @Override
     public Optional<ReservationDto> getReservationByRentalId(Long rentalId) {
@@ -23,18 +23,18 @@ public class RentalReservationQueryAdapter implements ReservationQueryPort {
                 queryFactory
                         .select(Projections.constructor(
                                 ReservationDto.class,
-                                reservation.id.as("reservationId"),
-                                reservation.startDate,
-                                reservation.endDate,
-                                reservation.rentalFee,
-                                reservation.deposit,
-                                reservation.status.stringValue(),
-                                reservation.ownerId,
-                                reservation.renterId,
-                                reservation.postId
+                                rental.id.as("reservationId"),
+                                rental.startDate,
+                                rental.endDate,
+                                rental.rentalFee,
+                                rental.deposit,
+                                rental.rentalReservationStatus.stringValue(),
+                                rental.ownerId,
+                                rental.renterId,
+                                rental.postId
                         ))
-                        .from(reservation)
-                        .where(reservation.rentalId.eq(rentalId))
+                        .from(rental)
+                        .where(rental.id.eq(rentalId))
                         .fetchOne()
         );
     }

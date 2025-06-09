@@ -61,14 +61,23 @@ const nextConfig = {
               `
             default-src 'self';
             script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com;
-            connect-src 'self' https://finopenapi.ssafy.io http://k12e205.p.ssafy.io:8081 http://k12e205.p.ssafy.io:8082 ws://k12e205.p.ssafy.io:8082 ws://k12e205.p.ssafy.io:8081 https://maps.googleapis.com https://maps.gstatic.com;
+            connect-src 'self' 
+              https://finopenapi.ssafy.io 
+              http://k12e205.p.ssafy.io:8081 
+              http://k12e205.p.ssafy.io:8082 
+              ws://k12e205.p.ssafy.io:8082 
+              ws://k12e205.p.ssafy.io:8081 
+              http://localhost:8081 
+              ws://localhost:8081 
+              https://maps.googleapis.com 
+              https://maps.gstatic.com;
             img-src 'self' https://*.gstatic.com https://*.googleapis.com data: blob:
-            https://example.com  
-            https://nextdoor-images.com
+              https://example.com  
+              https://nextdoor-images.com
               https://oneders.s3.ap-northeast-2.amazonaws.com
               https://ssafy-nextdoor.s3.ap-northeast-2.amazonaws.com;
             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-            font-src 'self' https://fonts.gstatic.com;
+            font-src 'self' https://fonts.gstatic.com data:;
           `
                 .replace(/\s{2,}/g, " ")
                 .trim() + ";",
