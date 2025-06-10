@@ -1,0 +1,57 @@
+name: ✨ 새로운 기능 구현
+description: 프로젝트에 새로운 기능을 추가합니다.
+title: "[FEAT] " # 제목에 대한 가이드라인은 제거했습니다.
+labels: feat
+assignees: ''
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🥸 어떤 기능인가요?
+
+        추가하려는 기능을 자세히 설명해주세요.
+        * 이 기능이 해결하려는 문제점은 무엇인가요?
+        * 이 기능이 사용자에게 어떤 가치를 제공하나요?
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: 기능 설명
+      description: |
+        구현하려는 새로운 기능에 대해 구체적으로 설명해주세요.
+        예시:
+        - FCM 연동 전까지 임시로 받은 초대 목록 존재 여부에 따라 알림 존재 여부를 판단하는 API를 구현합니다.
+      placeholder: 구현할 기능에 대해 설명해주세요.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## ✅ 작업 내용
+
+        이 기능을 구현하기 위해 필요한 작업들을 구체적으로 나열해주세요.
+        (예: API 엔드포인트 정의, DB 스키마 변경, 특정 컴포넌트 구현 등)
+        * 각 작업은 명확하게 구분되어야 합니다.
+        * 완료 기준을 명시하는 것이 좋습니다.
+  - type: input
+    id: due-date
+    attributes:
+      label: 😇 이때까지 끝낼게요!
+      description: 기능 개발 완료 예상 날짜를 신중하게 작성해주세요!
+      placeholder: 예시) 2025-06-30 또는 '당장'
+    validations:
+      required: true
+  - type: textarea
+    id: reference-materials
+    attributes:
+      label: 😵 참고할 만한 자료 (선택)
+      description: 기능 구현에 참고할 수 있는 디자인 시안, API 문서, 기술 블로그 링크 등을 첨부해주세요.
+      placeholder: 관련 자료가 있다면 링크를 여기에 추가해주세요.
+  - type: checkboxes
+    id: team-check
+    attributes:
+      label: 🙇‍♀️ 이슈 확인했어요 :)
+      description: 팀원 여러분, 이 이슈를 확인하신 후 체크 표시를 해주세요!
+      options:
+        - label: @Choijake
+        - label: @developHeo515
+        - label: @5almiaki
