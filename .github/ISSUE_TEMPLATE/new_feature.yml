@@ -1,6 +1,6 @@
 name: ✨ 새로운 기능 구현
 description: 프로젝트에 새로운 기능을 추가합니다.
-title: "[FEAT] " # 제목에 대한 가이드라인은 제거했습니다.
+title: "[FEAT] "
 labels: feat
 assignees: ''
 body:
@@ -52,6 +52,6 @@ body:
       label: 🙇‍♀️ 이슈 확인했어요 :)
       description: 팀원 여러분, 이 이슈를 확인하신 후 체크 표시를 해주세요!
       options:
-        - label: @Choijake
-        - label: @developHeo515
-        - label: @5almiaki
+        - label: '@Choijake'
+        - label: '@developHeo515'
+        - label: '@5almiaki'
