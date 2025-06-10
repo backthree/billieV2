@@ -20,4 +20,6 @@ assignees: ''
 
 ## 🙇‍♀️이슈 확인했어요:)
 > 팀원에게 이슈 확인을 부탁해요!
-- [ ] 팀원명
+- [ ] '@Choijake'
+- [ ] '@developHeo515'
+- [ ] '5almiakki'
