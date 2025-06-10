@@ -46,7 +46,8 @@ public class SecurityConfig {
                                 "/api/v1/auth"
                         ).permitAll()
                         // TODO OAuth2 구현 후 아래 줄 수정
-                        .anyRequest().permitAll())
+                        .anyRequest()
+                        .authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .redirectionEndpoint(redirection -> redirection
                                 .baseUri("/api/v1/auth/oauth2/code/*"))
