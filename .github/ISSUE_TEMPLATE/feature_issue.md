@@ -22,6 +22,6 @@ assignees: ''
 
 ## 🙇‍♀️ 이슈 확인했어요:)
 > 팀원에게 이슈 확인을 부탁해요! 이슈를 확인한 팀원은 체크 표시를 해주세요!
-- [ ] '@Choijake'
-- [ ] '@developHeo515'
-- [ ] '5almiakki'
+- [ ] @Choijake
+- [ ] @developHeo515
+- [ ] @5almiakki
