@@ -4,7 +4,7 @@ import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.member.domain.QMember;
 import com.nextdoor.nextdoor.domain.post.domain.QPost;
 import com.nextdoor.nextdoor.domain.post.domain.QProductImage;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.QRentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.QRentalReservation;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchRentalException;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchReservationException;

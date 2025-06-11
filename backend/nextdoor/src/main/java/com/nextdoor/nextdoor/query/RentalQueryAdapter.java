@@ -4,7 +4,7 @@ import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.member.domain.QMember;
 import com.nextdoor.nextdoor.domain.post.domain.QPost;
 import com.nextdoor.nextdoor.domain.post.domain.QProductImage;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.QRentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.QRentalReservation;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationProcess;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationStatus;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.RentalQueryPort;

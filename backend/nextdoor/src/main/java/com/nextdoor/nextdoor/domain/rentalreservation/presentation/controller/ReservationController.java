@@ -1,6 +1,5 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.presentation.controller;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.controller.dto.request.*;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationSaveRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationStatusUpdateRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationUpdateRequestDto;

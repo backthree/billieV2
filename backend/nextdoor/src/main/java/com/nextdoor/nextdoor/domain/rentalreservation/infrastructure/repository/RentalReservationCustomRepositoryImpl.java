@@ -1,10 +1,7 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.repository;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.*;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.AiComparisonResult;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.AiImage;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.AiImageType;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.*;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

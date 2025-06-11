@@ -15,7 +15,6 @@ import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchRen
 import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.message.RentalStatusMessage;
 import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.repository.AiImageComparisonPairRepository;
 import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.repository.RentalReservationRepository;
-import com.nextdoor.nextdoor.domain.rentalreservation.service.dto.*;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchReservationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
