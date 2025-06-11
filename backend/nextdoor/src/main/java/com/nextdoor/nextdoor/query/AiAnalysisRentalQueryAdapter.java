@@ -6,7 +6,7 @@ import com.nextdoor.nextdoor.domain.aianalysis.port.AiAnalysisRentalQueryPort;
 import com.nextdoor.nextdoor.domain.aianalysis.service.dto.RentalDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.QAiImage;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.QRentalReservation;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 

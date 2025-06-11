@@ -1,4 +1,5 @@
 import axiosInstance from "../instance";
+export type CreatePostRequest = import("@/types/posts/request").PostCreateRequestDTO;
 
 // 공통 에러 처리 함수
 const handleApiError = (error: any, name: string) => {

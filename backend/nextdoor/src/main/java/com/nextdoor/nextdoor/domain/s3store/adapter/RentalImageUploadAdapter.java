@@ -1,7 +1,7 @@
 package com.nextdoor.nextdoor.domain.s3store.adapter;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.port.S3ImageUploadPort;
-import com.nextdoor.nextdoor.domain.rentalreservation.service.dto.S3UploadResult;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.port.S3ImageUploadPort;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.S3UploadResult;
 import com.nextdoor.nextdoor.domain.s3store.dto.FileUploadRequestDto;
 import com.nextdoor.nextdoor.domain.s3store.dto.FileUploadResponseDto;
 import com.nextdoor.nextdoor.domain.s3store.service.S3Service;
