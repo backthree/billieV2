@@ -7,6 +7,7 @@ import com.nextdoor.nextdoor.domain.auth.filter.RedirectUrlCookieFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -44,8 +45,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(httpRequest -> httpRequest
                         .requestMatchers(
                                 "/api/v1/auth"
-                        ).permitAll()
-                        // TODO OAuth2 구현 후 아래 줄 수정
+                        )
+                        .permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/posts"
+                        )
+                        .permitAll()
+                        .requestMatchers(
+                                "/api/v1/posts/{postId}/like",
+                                "/api/v1/posts/liked"
+                        )
+                        .authenticated()
                         .anyRequest()
                         .authenticated())
                 .oauth2Login(oauth2 -> oauth2
