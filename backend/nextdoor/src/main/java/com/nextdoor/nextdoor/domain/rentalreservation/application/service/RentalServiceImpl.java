@@ -6,15 +6,14 @@ import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.*;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.*;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.service.RentalDomainService;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.service.RentalImageDomainService;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.*;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.event.RentalReservationConfirmedEvent;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.*;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.event.out.DepositProcessingRequestEvent;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.event.out.RentalCompletedEvent;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.InvalidRenterIdException;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchRentalException;
 import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.message.RentalStatusMessage;
-import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.repository.AiImageComparisonPairRepository;
-import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.repository.RentalReservationRepository;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.repository.AiImageComparisonPairRepository;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.repository.RentalReservationRepository;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchReservationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -342,17 +341,5 @@ public class RentalServiceImpl implements RentalService {
     @Transactional
     public void deleteAiImageComparisonPairByRentalId(Long rentalId) {
         aiImageComparisonPairRepository.deleteByRentalId(rentalId);
-    }
-
-    @Override
-    @Transactional
-    public void createFromRentalReservation(RentalReservationConfirmedEvent event) {
-        // Implementation for handling RentalReservationConfirmedEvent
-        // This method replaces the old createFromReservation method
-        RentalReservation rentalReservation = rentalReservationRepository.findById(event.getRentalReservationId())
-                .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
-
-        // Add any necessary logic here to handle the confirmed event
-        // For now, just a placeholder implementation
     }
 }

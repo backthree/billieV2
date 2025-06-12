@@ -11,7 +11,7 @@ import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.RentalDetailResponse;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.UpdateAccountResponse;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.UploadImageResponse;
-import com.nextdoor.nextdoor.domain.rentalreservation.presentation.mapper.RentalMapper;
+import com.nextdoor.nextdoor.domain.rentalreservation.presentation.mapper.RentalReservationMapper;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ import java.util.List;
 public class RentalController {
 
     private final RentalService rentalService;
-    private final RentalMapper rentalMapper;
+    private final RentalReservationMapper rentalReservationMapper;
 
     @GetMapping
     public ResponseEntity<Page<RentalDetailResponse>> getMyRentals(
@@ -43,9 +43,9 @@ public class RentalController {
             Pageable pageable
     ) {
         RetrieveRentalsRequest retrieveRentalsRequest = new RetrieveRentalsRequest(userRole, condition);
-        SearchRentalCommand command = rentalMapper.toCommand(userId, retrieveRentalsRequest, pageable);
+        SearchRentalCommand command = rentalReservationMapper.toCommand(userId, retrieveRentalsRequest, pageable);
         Page<SearchRentalResult> results = rentalService.searchRentals(command);
-        Page<RentalDetailResponse> responsePage = results.map(rentalMapper::toResponse);
+        Page<RentalDetailResponse> responsePage = results.map(rentalReservationMapper::toResponse);
 
         return ResponseEntity.ok(responsePage);
     }
@@ -60,18 +60,18 @@ public class RentalController {
                 .images(images)
                 .build();
 
-        UploadImageCommand command = rentalMapper.toUploadImageCommand(userId, rentalId, request);
+        UploadImageCommand command = rentalReservationMapper.toUploadImageCommand(userId, rentalId, request);
         UploadImageResult result = rentalService.registerBeforePhoto(command);
-        UploadImageResponse response = rentalMapper.toUploadImageResponse(result);
+        UploadImageResponse response = rentalReservationMapper.toUploadImageResponse(result);
 
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{rentalId}/request-remittance")
     public ResponseEntity<RemittanceResponse> requestRemittance(@PathVariable Long rentalId) {
-        RequestRemittanceCommand command = rentalMapper.toCommand(rentalId);
+        RequestRemittanceCommand command = rentalReservationMapper.toCommand(rentalId);
         RequestRemittanceResult result = rentalService.requestRemittance(command);
-        RemittanceResponse response = rentalMapper.toResponse(result);
+        RemittanceResponse response = rentalReservationMapper.toResponse(result);
 
         return ResponseEntity.ok(response);
     }
@@ -79,7 +79,7 @@ public class RentalController {
     @GetMapping("/{rentalId}/remittance-data")
     public ResponseEntity<RemittanceResponse> getRemittanceData(@PathVariable Long rentalId) {
         RequestRemittanceResult result = rentalService.getRemittanceData(rentalId);
-        RemittanceResponse response = rentalMapper.toResponse(result);
+        RemittanceResponse response = rentalReservationMapper.toResponse(result);
 
         return ResponseEntity.ok(response);
     }
@@ -94,9 +94,9 @@ public class RentalController {
                 .images(images)
                 .build();
 
-        UploadImageCommand command = rentalMapper.toUploadImageCommand(userId, rentalId, request);
+        UploadImageCommand command = rentalReservationMapper.toUploadImageCommand(userId, rentalId, request);
         UploadImageResult result = rentalService.registerAfterPhoto(command);
-        UploadImageResponse response = rentalMapper.toUploadImageResponse(result);
+        UploadImageResponse response = rentalReservationMapper.toUploadImageResponse(result);
 
         return ResponseEntity.ok(response);
     }
@@ -104,7 +104,7 @@ public class RentalController {
     @GetMapping("/{rentalId}/ai-analysis")
     ResponseEntity<AiComparisonResponse> getAiAnalysis(@PathVariable Long rentalId){
         AiComparisonResult result = rentalService.getAiAnalysis(rentalId);
-        AiComparisonResponse response = rentalMapper.toResponse(result);
+        AiComparisonResponse response = rentalReservationMapper.toResponse(result);
 
         return ResponseEntity.ok(response);
     }
@@ -114,9 +114,9 @@ public class RentalController {
             @PathVariable Long rentalId,
             @Valid @RequestBody UpdateAccountRequest request) {
 
-        UpdateAccountCommand command = rentalMapper.toUpdateAccountCommand(rentalId, request);
+        UpdateAccountCommand command = rentalReservationMapper.toUpdateAccountCommand(rentalId, request);
         UpdateAccountResult result = rentalService.updateAccount(command);
-        UpdateAccountResponse response = rentalMapper.toUpdateAccountResponse(result);
+        UpdateAccountResponse response = rentalReservationMapper.toUpdateAccountResponse(result);
 
         return ResponseEntity.ok(response);
     }
@@ -126,7 +126,7 @@ public class RentalController {
             @RequestParam Long userId) {
 
         ManagedRentalCountResult result = rentalService.countManagedRentals(userId);
-        ManagedRentalCountResponse response = rentalMapper.toManagedRentalCountResponse(result);
+        ManagedRentalCountResponse response = rentalReservationMapper.toManagedRentalCountResponse(result);
 
         return ResponseEntity.ok(response);
     }
@@ -136,7 +136,7 @@ public class RentalController {
             @PathVariable Long rentalId) {
 
         SearchRentalResult result = rentalService.getRentalById(rentalId);
-        RentalDetailResponse response = rentalMapper.toResponse(result);
+        RentalDetailResponse response = rentalReservationMapper.toResponse(result);
 
         return ResponseEntity.ok(response);
     }
@@ -145,9 +145,9 @@ public class RentalController {
     public ResponseEntity<DeleteRentalResponse> deleteRental(
             @PathVariable Long rentalId) {
 
-        DeleteRentalCommand command = rentalMapper.toDeleteCommand(rentalId);
+        DeleteRentalCommand command = rentalReservationMapper.toDeleteCommand(rentalId);
         DeleteRentalResult result = rentalService.deleteRental(command);
-        DeleteRentalResponse response = rentalMapper.toDeleteResponse(result);
+        DeleteRentalResponse response = rentalReservationMapper.toDeleteResponse(result);
 
         if (result.isSuccess()) {
             return ResponseEntity.ok(response);

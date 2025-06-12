@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
 @Component
-public class RentalMapper {
+public class RentalReservationMapper {
 
     private final ObjectMapper objectMapper;
 

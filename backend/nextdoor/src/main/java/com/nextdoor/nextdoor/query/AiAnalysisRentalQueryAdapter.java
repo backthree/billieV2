@@ -4,9 +4,9 @@ import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.aianalysis.enums.AiImageType;
 import com.nextdoor.nextdoor.domain.aianalysis.port.AiAnalysisRentalQueryPort;
 import com.nextdoor.nextdoor.domain.aianalysis.service.dto.RentalDto;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.QAiImage;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.QRentalReservation;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.QAiImage;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.QRentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 

@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.PostDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.ReservationMemberQueryDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.ReservationQueryDto;

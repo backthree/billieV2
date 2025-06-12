@@ -1,7 +1,7 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.domain.service;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.InvalidRenterIdException;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.ReservationDto;
 import org.springframework.stereotype.Service;

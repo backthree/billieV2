@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import lombok.Getter;
 
 @Getter

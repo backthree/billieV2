@@ -1,7 +1,7 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.application.listener;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationProcess;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationProcess;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.event.out.DepositProcessingRequestEvent;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.event.out.RentalCompletedEvent;
 import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.message.RentalStatusMessage;

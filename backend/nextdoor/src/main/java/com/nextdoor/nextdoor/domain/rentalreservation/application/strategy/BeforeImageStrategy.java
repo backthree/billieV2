@@ -1,8 +1,8 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.application.strategy;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.AiImageType;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.AiImageType;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.InvalidRentalStatusException;
 import org.springframework.stereotype.Component;
 

@@ -3,7 +3,6 @@ package com.nextdoor.nextdoor.domain.rentalreservation.application.service;
 import com.nextdoor.nextdoor.domain.fintech.event.DepositCompletedEvent;
 import com.nextdoor.nextdoor.domain.fintech.event.RemittanceCompletedEvent;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.*;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.event.RentalReservationConfirmedEvent;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
@@ -27,5 +26,4 @@ public interface RentalService {
     DeleteRentalResult deleteRental(DeleteRentalCommand command);
     void createAiImageComparisonPair(Long rentalId, Long beforeImageId, Long afterImageId, String pairComparisonResult);
     void deleteAiImageComparisonPairByRentalId(Long rentalId);
-    void createFromRentalReservation(RentalReservationConfirmedEvent event);
 }

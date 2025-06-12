@@ -1,10 +1,10 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.application.service;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationProcess;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationProcess;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.message.RentalStatusMessage;
-import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.repository.RentalReservationRepository;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.repository.RentalReservationRepository;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchRentalException;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.RentalDetailQueryPort;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.MemberUuidQueryPort;

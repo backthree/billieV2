@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.rentalreservation.domain.entity;
+package com.nextdoor.nextdoor.domain.rentalreservation.domain.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

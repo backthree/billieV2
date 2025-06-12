@@ -3,7 +3,7 @@ package com.nextdoor.nextdoor.query;
 import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.chat.dto.RentalDto;
 import com.nextdoor.nextdoor.domain.chat.port.ChatRentalQueryPort;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.QRentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.QRentalReservation;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

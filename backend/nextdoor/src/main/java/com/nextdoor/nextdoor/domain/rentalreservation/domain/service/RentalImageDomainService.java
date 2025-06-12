@@ -1,7 +1,7 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.domain.service;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.AiImageType;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.AiImageType;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.strategy.RentalImageStrategy;
 import org.springframework.stereotype.Service;
 

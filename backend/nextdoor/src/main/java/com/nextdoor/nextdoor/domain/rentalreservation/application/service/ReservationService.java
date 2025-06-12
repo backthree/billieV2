@@ -4,9 +4,9 @@ import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.R
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationStatusUpdateRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationUpdateRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.ReservationResponseDto;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservation;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationProcess;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationProcess;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.AlreadyConfirmedException;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.IllegalStatusException;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchReservationException;
@@ -17,7 +17,7 @@ import com.nextdoor.nextdoor.domain.rentalreservation.application.port.MemberUui
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.RentalDetailQueryPort;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.RentalReservationPostQueryPort;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.ReservationMemberQueryPort;
-import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.repository.RentalReservationRepository;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.repository.RentalReservationRepository;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.PostDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.ReservationMemberQueryDto;
 import lombok.RequiredArgsConstructor;

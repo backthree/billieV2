@@ -1,7 +1,8 @@
-package com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.repository;
+package com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.persistence.adapter;
 
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.AiComparisonResult;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.entity.*;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.*;
+import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.persistence.custom.RentalReservationCustomRepository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class RentalReservationCustomRepositoryImpl implements RentalReservationCustomRepository {
+public class RentalReservationCustomRepositoryAdapter implements RentalReservationCustomRepository {
 
     private final JPAQueryFactory queryFactory;
     private final QRentalReservation rentalReservation = QRentalReservation.rentalReservation;
