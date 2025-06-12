@@ -2,7 +2,7 @@ package com.nextdoor.nextdoor.domain.member.service;
 
 import com.nextdoor.nextdoor.domain.member.controller.dto.request.MemberExtraInfoSaveRequestDto;
 import com.nextdoor.nextdoor.domain.member.controller.dto.response.MemberResponseDto;
-import com.nextdoor.nextdoor.domain.member.domain.Member;
+import com.nextdoor.nextdoor.domain.member.domain.model.Member;
 import com.nextdoor.nextdoor.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.member.repository;
 
-import com.nextdoor.nextdoor.domain.member.domain.Member;
+import com.nextdoor.nextdoor.domain.member.domain.model.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

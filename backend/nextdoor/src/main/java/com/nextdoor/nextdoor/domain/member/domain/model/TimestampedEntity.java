@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.member.domain;
+package com.nextdoor.nextdoor.domain.member.domain.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

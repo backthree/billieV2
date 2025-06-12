@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.member.domain;
+package com.nextdoor.nextdoor.domain.member.domain.model;
 
 import com.nextdoor.nextdoor.domain.member.enums.Gender;
 import jakarta.persistence.*;

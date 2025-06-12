@@ -3,7 +3,7 @@ package com.nextdoor.nextdoor.query;
 import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.chat.dto.MemberDto;
 import com.nextdoor.nextdoor.domain.chat.port.ChatMemberQueryPort;
-import com.nextdoor.nextdoor.domain.member.domain.QMember;
+import com.nextdoor.nextdoor.domain.member.domain.model.QMember;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

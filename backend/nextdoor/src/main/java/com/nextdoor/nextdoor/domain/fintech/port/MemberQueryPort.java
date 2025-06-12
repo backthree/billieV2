@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.fintech.port;
 
-import com.nextdoor.nextdoor.domain.member.domain.Member;
+import com.nextdoor.nextdoor.domain.member.domain.model.Member;
 
 import java.util.Optional;
 

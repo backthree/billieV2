@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.member.controller.dto.response;
 
-import com.nextdoor.nextdoor.domain.member.domain.Member;
+import com.nextdoor.nextdoor.domain.member.domain.model.Member;
 import com.nextdoor.nextdoor.domain.member.enums.Gender;
 import lombok.Getter;
 
