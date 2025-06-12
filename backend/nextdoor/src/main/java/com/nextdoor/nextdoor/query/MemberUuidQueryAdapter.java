@@ -2,11 +2,11 @@ package com.nextdoor.nextdoor.query;
 
 import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.member.domain.QMember;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.QRentalReservation;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.RentalReservation;
-import com.nextdoor.nextdoor.domain.rentalreservation.exception.NoSuchRentalException;
-import com.nextdoor.nextdoor.domain.rentalreservation.exception.NoSuchReservationException;
-import com.nextdoor.nextdoor.domain.rentalreservation.port.MemberUuidQueryPort;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.QRentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchRentalException;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchReservationException;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.port.MemberUuidQueryPort;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

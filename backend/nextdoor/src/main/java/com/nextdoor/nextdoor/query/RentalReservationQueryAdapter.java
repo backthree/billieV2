@@ -1,9 +1,9 @@
 package com.nextdoor.nextdoor.query;
 
 import com.nextdoor.nextdoor.common.Adapter;
-import com.nextdoor.nextdoor.domain.rentalreservation.port.ReservationQueryPort;
-import com.nextdoor.nextdoor.domain.rentalreservation.service.dto.ReservationDto;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.QRentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.port.ReservationQueryPort;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.ReservationDto;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.QRentalReservation;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

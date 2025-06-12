@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.chat.dto;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
