@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.member.application;
+package com.nextdoor.nextdoor.domain.member.application.service;
 
 import com.nextdoor.nextdoor.domain.member.presentation.dto.request.MemberExtraInfoSaveRequestDto;
 import com.nextdoor.nextdoor.domain.member.presentation.dto.response.MemberResponseDto;
