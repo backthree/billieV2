@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.member.controller.dto.request;
+package com.nextdoor.nextdoor.domain.member.presentation.dto.request;
 
 import com.nextdoor.nextdoor.domain.member.enums.Gender;
 import lombok.Getter;

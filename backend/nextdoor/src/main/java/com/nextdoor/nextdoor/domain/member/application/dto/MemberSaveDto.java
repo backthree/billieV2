@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.member.service.dto;
+package com.nextdoor.nextdoor.domain.member.application.dto;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -1,7 +1,7 @@
-package com.nextdoor.nextdoor.domain.member.service;
+package com.nextdoor.nextdoor.domain.member.application;
 
-import com.nextdoor.nextdoor.domain.member.controller.dto.request.MemberExtraInfoSaveRequestDto;
-import com.nextdoor.nextdoor.domain.member.controller.dto.response.MemberResponseDto;
+import com.nextdoor.nextdoor.domain.member.presentation.dto.request.MemberExtraInfoSaveRequestDto;
+import com.nextdoor.nextdoor.domain.member.presentation.dto.response.MemberResponseDto;
 import com.nextdoor.nextdoor.domain.member.domain.model.Member;
 import com.nextdoor.nextdoor.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
