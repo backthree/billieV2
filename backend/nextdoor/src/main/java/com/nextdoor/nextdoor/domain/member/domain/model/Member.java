@@ -38,9 +38,6 @@ public class Member extends TimestampedEntity {
 
     private String profileImageUrl;
 
-//    @Column(name = "account")
-//    private Long accountId;
-
     @NotNull
     private String nickname;
 
@@ -68,9 +65,7 @@ public class Member extends TimestampedEntity {
         }
     }
 
-    public void updateUserKey(String userKey) { this.userKey = userKey; }
-
-//    public void updateAccountId(Long accountId) {
-//        this.accountId = accountId;
-//    }
+    public void updateUserKey(String userKey) {
+        this.userKey = userKey;
+    }
 }
