@@ -3,7 +3,7 @@ package com.nextdoor.nextdoor.domain.fintech.service;
 import com.nextdoor.nextdoor.domain.auth.port.AuthFintechCommandPort;
 import com.nextdoor.nextdoor.domain.fintech.client.SsafyApiClient;
 import com.nextdoor.nextdoor.domain.member.domain.model.Member;
-import com.nextdoor.nextdoor.domain.member.repository.MemberRepository;
+import com.nextdoor.nextdoor.domain.member.domain.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;

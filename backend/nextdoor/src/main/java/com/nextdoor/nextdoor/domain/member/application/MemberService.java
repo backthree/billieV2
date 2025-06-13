@@ -3,7 +3,7 @@ package com.nextdoor.nextdoor.domain.member.application;
 import com.nextdoor.nextdoor.domain.member.presentation.dto.request.MemberExtraInfoSaveRequestDto;
 import com.nextdoor.nextdoor.domain.member.presentation.dto.response.MemberResponseDto;
 import com.nextdoor.nextdoor.domain.member.domain.model.Member;
-import com.nextdoor.nextdoor.domain.member.repository.MemberRepository;
+import com.nextdoor.nextdoor.domain.member.domain.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -2,7 +2,7 @@ package com.nextdoor.nextdoor.domain.member.infrastructure.persistence.adapter;
 
 import com.nextdoor.nextdoor.domain.member.domain.model.Member;
 import com.nextdoor.nextdoor.domain.member.infrastructure.persistence.jpa.MemberJpaRepository;
-import com.nextdoor.nextdoor.domain.member.repository.MemberRepository;
+import com.nextdoor.nextdoor.domain.member.domain.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
