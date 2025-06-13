@@ -1,6 +1,5 @@
 package com.nextdoor.nextdoor.domain.member.domain.model;
 
-import com.nextdoor.nextdoor.domain.member.enums.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
