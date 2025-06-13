@@ -51,15 +51,21 @@ public class Member extends TimestampedEntity {
     private String securePassword;
 
     public void updateBirth(String birth) {
-        this.birth = birth;
+        if (birth != null) {
+            this.birth = birth;
+        }
     }
 
     public void updateGender(Gender gender) {
-        this.gender = gender;
+        if (gender != null) {
+            this.gender = gender;
+        }
     }
 
     public void updateAddress(String address) {
-        this.address = address;
+        if (address != null) {
+            this.address = address;
+        }
     }
 
     public void updateUserKey(String userKey) { this.userKey = userKey; }

@@ -6,9 +6,11 @@ import com.nextdoor.nextdoor.domain.member.domain.model.Member;
 import com.nextdoor.nextdoor.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
@@ -16,18 +18,9 @@ public class MemberServiceImpl implements MemberService {
     @Override
     public MemberResponseDto updateMember(Long memberId, MemberExtraInfoSaveRequestDto memberDto) {
         Member member = memberRepository.findById(memberId).orElseThrow();
-        if (memberDto.getBirth() != null) {
-            member.updateBirth(memberDto.getBirth());
-        }
-        if (memberDto.getGender() != null) {
-            member.updateGender(memberDto.getGender());
-        }
-        if (memberDto.getAddress() != null) {
-            member.updateAddress(memberDto.getAddress());
-        }
-//        if (memberDto.getAccountId() != null) {
-//            member.updateAccountId(memberDto.getAccountId());
-//        }
+        member.updateBirth(memberDto.getBirth());
+        member.updateGender(memberDto.getGender());
+        member.updateAddress(memberDto.getAddress());
         return MemberResponseDto.from(member);
     }
 
