@@ -4,7 +4,7 @@ import com.nextdoor.nextdoor.domain.auth.model.CustomOAuth2User;
 import com.nextdoor.nextdoor.domain.auth.exception.InvalidRedirectUrlException;
 import com.nextdoor.nextdoor.domain.auth.port.AuthFintechQueryPort;
 import com.nextdoor.nextdoor.domain.auth.port.AuthMemberQueryPort;
-import com.nextdoor.nextdoor.domain.auth.service.JwtProvider;
+import com.nextdoor.nextdoor.domain.auth.jwt.JwtProvider;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.auth.service;
+package com.nextdoor.nextdoor.domain.auth.jwt;
 
 import com.nextdoor.nextdoor.domain.auth.model.CustomOAuth2User;
 import io.jsonwebtoken.Jwts;
