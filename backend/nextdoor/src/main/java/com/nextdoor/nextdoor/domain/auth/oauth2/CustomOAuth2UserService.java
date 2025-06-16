@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.auth.service;
+package com.nextdoor.nextdoor.domain.auth.oauth2;
 
 import com.nextdoor.nextdoor.domain.auth.model.CustomOAuth2User;
 import com.nextdoor.nextdoor.domain.auth.exception.UnsupportedOAuth2ProviderException;
