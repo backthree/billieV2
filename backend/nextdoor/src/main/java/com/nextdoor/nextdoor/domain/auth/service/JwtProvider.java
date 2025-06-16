@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.auth.service;
 
-import com.nextdoor.nextdoor.domain.auth.CustomOAuth2User;
+import com.nextdoor.nextdoor.domain.auth.model.CustomOAuth2User;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

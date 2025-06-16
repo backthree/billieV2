@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.auth.oauth2;
 
-import com.nextdoor.nextdoor.domain.auth.CustomOAuth2User;
+import com.nextdoor.nextdoor.domain.auth.model.CustomOAuth2User;
 import com.nextdoor.nextdoor.domain.auth.exception.InvalidRedirectUrlException;
 import com.nextdoor.nextdoor.domain.auth.port.AuthFintechQueryPort;
 import com.nextdoor.nextdoor.domain.auth.port.AuthMemberQueryPort;
