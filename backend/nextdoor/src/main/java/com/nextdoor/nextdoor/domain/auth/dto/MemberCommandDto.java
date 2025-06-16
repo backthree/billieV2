@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.auth.service.dto;
+package com.nextdoor.nextdoor.domain.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

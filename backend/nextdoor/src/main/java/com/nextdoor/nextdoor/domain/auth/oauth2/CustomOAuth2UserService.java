@@ -5,8 +5,8 @@ import com.nextdoor.nextdoor.domain.auth.exception.UnsupportedOAuth2ProviderExce
 import com.nextdoor.nextdoor.domain.auth.port.AuthFintechCommandPort;
 import com.nextdoor.nextdoor.domain.auth.port.AuthMemberCommandPort;
 import com.nextdoor.nextdoor.domain.auth.port.AuthMemberQueryPort;
-import com.nextdoor.nextdoor.domain.auth.service.dto.MemberCommandDto;
-import com.nextdoor.nextdoor.domain.auth.service.dto.MemberQueryDto;
+import com.nextdoor.nextdoor.domain.auth.dto.MemberCommandDto;
+import com.nextdoor.nextdoor.domain.auth.dto.MemberQueryDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

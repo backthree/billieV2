@@ -2,8 +2,8 @@ package com.nextdoor.nextdoor.command;
 
 import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.auth.port.AuthMemberCommandPort;
-import com.nextdoor.nextdoor.domain.auth.service.dto.MemberCommandDto;
-import com.nextdoor.nextdoor.domain.auth.service.dto.MemberQueryDto;
+import com.nextdoor.nextdoor.domain.auth.dto.MemberCommandDto;
+import com.nextdoor.nextdoor.domain.auth.dto.MemberQueryDto;
 import com.nextdoor.nextdoor.domain.member.domain.model.Member;
 import com.nextdoor.nextdoor.domain.member.domain.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
