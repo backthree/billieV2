@@ -1,6 +1,5 @@
-package com.nextdoor.nextdoor.domain.member.domain;
+package com.nextdoor.nextdoor.domain.member.domain.model;
 
-import com.nextdoor.nextdoor.domain.member.enums.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -38,9 +37,6 @@ public class Member extends TimestampedEntity {
 
     private String profileImageUrl;
 
-//    @Column(name = "account")
-//    private Long accountId;
-
     @NotNull
     private String nickname;
 
@@ -51,20 +47,24 @@ public class Member extends TimestampedEntity {
     private String securePassword;
 
     public void updateBirth(String birth) {
-        this.birth = birth;
+        if (birth != null) {
+            this.birth = birth;
+        }
     }
 
     public void updateGender(Gender gender) {
-        this.gender = gender;
+        if (gender != null) {
+            this.gender = gender;
+        }
     }
 
     public void updateAddress(String address) {
-        this.address = address;
+        if (address != null) {
+            this.address = address;
+        }
     }
 
-    public void updateUserKey(String userKey) { this.userKey = userKey; }
-
-//    public void updateAccountId(Long accountId) {
-//        this.accountId = accountId;
-//    }
+    public void updateUserKey(String userKey) {
+        this.userKey = userKey;
+    }
 }

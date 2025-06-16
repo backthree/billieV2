@@ -1,7 +1,7 @@
 package com.nextdoor.nextdoor.query;
 
 import com.nextdoor.nextdoor.common.Adapter;
-import com.nextdoor.nextdoor.domain.member.domain.QMember;
+import com.nextdoor.nextdoor.domain.member.domain.model.QMember;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.ReservationMemberQueryPort;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.ReservationMemberQueryDto;
 import com.querydsl.core.types.ConstructorExpression;

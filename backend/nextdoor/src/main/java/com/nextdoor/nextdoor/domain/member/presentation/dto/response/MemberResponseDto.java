@@ -1,7 +1,7 @@
-package com.nextdoor.nextdoor.domain.member.controller.dto.response;
+package com.nextdoor.nextdoor.domain.member.presentation.dto.response;
 
-import com.nextdoor.nextdoor.domain.member.domain.Member;
-import com.nextdoor.nextdoor.domain.member.enums.Gender;
+import com.nextdoor.nextdoor.domain.member.domain.model.Member;
+import com.nextdoor.nextdoor.domain.member.domain.model.Gender;
 import lombok.Getter;
 
 @Getter

@@ -1,8 +1,8 @@
-package com.nextdoor.nextdoor.domain.member.controller;
+package com.nextdoor.nextdoor.domain.member.presentation.controller;
 
-import com.nextdoor.nextdoor.domain.member.controller.dto.request.MemberExtraInfoSaveRequestDto;
-import com.nextdoor.nextdoor.domain.member.controller.dto.response.MemberResponseDto;
-import com.nextdoor.nextdoor.domain.member.service.MemberService;
+import com.nextdoor.nextdoor.domain.member.presentation.dto.request.MemberExtraInfoSaveRequestDto;
+import com.nextdoor.nextdoor.domain.member.presentation.dto.response.MemberResponseDto;
+import com.nextdoor.nextdoor.domain.member.application.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
