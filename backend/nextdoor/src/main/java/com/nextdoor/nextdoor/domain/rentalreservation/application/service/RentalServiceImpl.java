@@ -238,7 +238,6 @@ public class RentalServiceImpl implements RentalService {
                     .rentalId(rentalReservation.getId())
                     .build());
         } else if(rentalReservation.getRentalReservationStatus().equals(RentalReservationStatus.RENTAL_COMPLETED)){
-            rentalReservation.updateDealCount();
             eventPublisher.publishEvent(RentalCompletedEvent.builder()
                     .rentalId(rentalReservation.getId())
                     .build());
@@ -252,7 +251,7 @@ public class RentalServiceImpl implements RentalService {
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
         rentalReservation.processUpdateAccountInfo(command.getAccountNo(), command.getBankCode());
-        rentalReservation.updateFinalAmount(command.getFinalAmount());
+        rentalReservation.updateFinalAmount(new Money(command.getFinalAmount()));
 
         String renterUuid = memberUuidQueryPort.getMemberUuidByRentalIdAndRole(
                 rentalReservation.getId(),
@@ -284,9 +283,9 @@ public class RentalServiceImpl implements RentalService {
 
         return UpdateAccountResult.builder()
                 .rentalId(rentalReservation.getId())
-                .accountNo(rentalReservation.getAccountNo())
-                .bankCode(rentalReservation.getBankCode())
-                .finalAmount(rentalReservation.getFinalAmount())
+                .accountNo(rentalReservation.getAccountInfo().getAccountNo())
+                .bankCode(rentalReservation.getAccountInfo().getBankCode())
+                .finalAmount(rentalReservation.getFinalAmount().getAmount())
                 .build();
     }
 

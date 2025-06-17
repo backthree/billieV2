@@ -1,8 +1,7 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.domain.model;
 
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.InvalidAmountException;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.InvalidRentalStatusException;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.RentalImageUploadException;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.util.ValidationUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -10,7 +9,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,20 +44,17 @@ public class RentalReservation {
     @Column(name = "compared_analysis", columnDefinition = "TEXT")
     private String comparedAnalysis;
 
-    @Column(name = "deal_count")
-    private Integer dealCount;
-
-    @Column(name = "account_no", nullable = false, length = 30)
-    private String accountNo;
-
-    @Column(name = "bank_code", nullable = false, length = 10)
-    private String bankCode;
+    @Embedded
+    private AccountInfo accountInfo;
 
     @Column(name = "deposit_id")
     private Long depositId;
 
-    @Column(name = "final_amount")
-    private BigDecimal finalAmount;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount", column = @Column(name = "final_amount"))
+    })
+    private Money finalAmount;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -72,13 +67,17 @@ public class RentalReservation {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @NotNull
-    @Column(name = "rental_fee")
-    private BigDecimal rentalFee;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount", column = @Column(name = "rentalFee"))
+    })
+    private Money rentalFee;
 
-    @NotNull
-    @Column(name = "deposit")
-    private BigDecimal deposit;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount", column = @Column(name = "deposit"))
+    })
+    private Money deposit;
 
     @NotNull
     @Column(name = "owner_id")
@@ -92,19 +91,52 @@ public class RentalReservation {
     @Column(name = "post_id")
     private Long postId;
 
-    @Builder
-    public RentalReservation(List<AiImage> aiImages, RentalReservationStatus rentalReservationStatus, RentalReservationProcess rentalReservationProcess,
-                             String damageAnalysis, LocalDateTime createdAt, String accountNo, String bankCode, Long depositId,
-                             LocalDate startDate, LocalDate endDate, BigDecimal rentalFee, BigDecimal deposit,
-                             Long ownerId, Long renterId, Long postId) {
+    public static RentalReservation create(
+            List<AiImage> initialAiImages,
+            RentalReservationStatus rentalReservationStatus,
+            String damageAnalysis,
+            String accountNo,
+            String bankCode,
+            Long depositId,
+            LocalDate startDate,
+            LocalDate endDate,
+            Money rentalFee,
+            Money deposit,
+            Long ownerId,
+            Long renterId,
+            Long postId) {
+
+        AiImages images = new AiImages(initialAiImages);
+
+        return RentalReservation.builder()
+                .aiImages(images.getImages())
+                .rentalReservationStatus(rentalReservationStatus)
+                .rentalReservationProcess(getRentalProcessForStatus(rentalReservationStatus))
+                .damageAnalysis(damageAnalysis)
+                .createdAt(LocalDateTime.now())
+                .accountInfo(new AccountInfo(accountNo, bankCode))
+                .depositId(depositId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .rentalFee(rentalFee)
+                .deposit(deposit)
+                .ownerId(ownerId)
+                .renterId(renterId)
+                .postId(postId)
+                .build();
+    }
+
+    @Builder(access = AccessLevel.PRIVATE)
+    private RentalReservation(List<AiImage> aiImages, RentalReservationStatus rentalReservationStatus, RentalReservationProcess rentalReservationProcess,
+                              String damageAnalysis, LocalDateTime createdAt, AccountInfo accountInfo, Long depositId,
+                              LocalDate startDate, LocalDate endDate, Money rentalFee, Money deposit,
+                              Long ownerId, Long renterId, Long postId) {
         this.aiImages = aiImages;
         this.rentalReservationStatus = rentalReservationStatus;
-        this.rentalReservationProcess = rentalReservationProcess != null ? rentalReservationProcess : getRentalProcessForStatus(rentalReservationStatus);
+        this.rentalReservationProcess = rentalReservationProcess;
         this.damageAnalysis = damageAnalysis;
-        this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
-        this.dealCount = 0;
-        this.accountNo = accountNo != null ? accountNo : "";
-        this.bankCode = bankCode != null ? bankCode : "";
+        this.createdAt = createdAt;
+        this.accountInfo = accountInfo;
         this.depositId = depositId;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -120,19 +152,25 @@ public class RentalReservation {
     }
 
     public void processRemittanceCompletion() {
-        if(rentalReservationStatus != RentalReservationStatus.BEFORE_PHOTO_ANALYZED){
-            throw new InvalidRentalStatusException("결제 완료 처리가 불가능한 대여 상태입니다");
-        }
-
+        validateRemittanceCompletionStatus();
         updateStatus(RentalReservationStatus.REMITTANCE_COMPLETED);
     }
 
+    private void validateRemittanceCompletionStatus() {
+        if(rentalReservationStatus != RentalReservationStatus.BEFORE_PHOTO_ANALYZED){
+            throw new InvalidRentalStatusException("결제 완료 처리가 불가능한 대여 상태입니다");
+        }
+    }
+
     public void processRentalPeriodEnd() {
+        validateRentalPeriodEndStatus();
+        updateStatus(RentalReservationStatus.RENTAL_PERIOD_ENDED);
+    }
+
+    private void validateRentalPeriodEndStatus() {
         if(rentalReservationStatus != RentalReservationStatus.REMITTANCE_COMPLETED){
             throw new InvalidRentalStatusException("대여 기간 종료가 불가능한 대여 상태입니다");
         }
-
-        updateStatus(RentalReservationStatus.RENTAL_PERIOD_ENDED);
     }
 
     public void updateDamageAnalysis(String damageAnalysis) {
@@ -145,44 +183,30 @@ public class RentalReservation {
     }
 
     public void processUpdateAccountInfo(String accountNo, String bankCode) {
-        validateNotBlank(accountNo, "accountNo");
-        validateNotBlank(bankCode, "bankCode");
-        this.accountNo = accountNo;
-        this.bankCode = bankCode;
+        ValidationUtils.validateNotBlank(accountNo, "accountNo");
+        ValidationUtils.validateNotBlank(bankCode, "bankCode");
+        this.accountInfo = new AccountInfo(accountNo, bankCode);
 
         updateStatus(RentalReservationStatus.REMITTANCE_REQUESTED);
     }
 
     public void processDepositCompletion(){
-        if (rentalReservationStatus != RentalReservationStatus.BEFORE_AND_AFTER_COMPARED) {
-            throw new InvalidRentalStatusException(this.rentalReservationStatus.name() + ": 보증금을 처리가 불가능한 대여 상태입니다");
-        }
-
-        updateDealCount();
+        validateDepositCompletionStatus();
         updateStatus(RentalReservationStatus.RENTAL_COMPLETED);
     }
 
-    public void updateDealCount() {
-        this.dealCount = dealCount + 1;
+    private void validateDepositCompletionStatus() {
+        if (rentalReservationStatus != RentalReservationStatus.BEFORE_AND_AFTER_COMPARED) {
+            throw new InvalidRentalStatusException(this.rentalReservationStatus.name() + ": 보증금을 처리가 불가능한 대여 상태입니다");
+        }
     }
 
     public void updateDepositId(Long depositId) {
         this.depositId = depositId;
     }
 
-    public void updateFinalAmount(BigDecimal amount) {
-        validateAmount(amount);
+    public void updateFinalAmount(Money amount) {
         this.finalAmount = amount;
-    }
-
-    private void validateAmount(BigDecimal amount) {
-        if (amount == null) {
-            throw new InvalidAmountException("송금 금액은 필수입니다.");
-        }
-
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidAmountException("송금 금액은 0보다 커야 합니다.");
-        }
     }
 
     public void saveAiImage(AiImageType imageType, String imageUrl, String mimeType) {
@@ -205,15 +229,15 @@ public class RentalReservation {
         this.endDate = endDate;
     }
 
-    public void updateRentalFee(BigDecimal rentalFee) {
+    public void updateRentalFee(Money rentalFee) {
         this.rentalFee = rentalFee;
     }
 
-    public void updateDeposit(BigDecimal deposit) {
+    public void updateDeposit(Money deposit) {
         this.deposit = deposit;
     }
 
-    private RentalReservationProcess getRentalProcessForStatus(RentalReservationStatus status) {
+    private static RentalReservationProcess getRentalProcessForStatus(RentalReservationStatus status) {
         if (status == null) {
             return RentalReservationProcess.BEFORE_RENTAL;
         }

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -20,6 +21,10 @@ public class AiImages {
             validateQuantityLimit();
             validateNoDuplicates();
         }
+    }
+
+    public List<AiImage> getImages() {
+        return Collections.unmodifiableList(images);
     }
 
     public void addImage(AiImage newImage) {

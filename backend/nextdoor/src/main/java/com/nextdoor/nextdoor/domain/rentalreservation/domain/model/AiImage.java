@@ -1,6 +1,7 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.domain.model;
 
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.RentalImageUploadException;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.util.ValidationUtils;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,8 +39,8 @@ public class AiImage {
     }
 
     public static AiImage create(RentalReservation rental, AiImageType type, String imageUrl, String mimeType){
-        validateNotBlank(imageUrl, "imageUrl");
-        validateNotBlank(mimeType, "mimeType");
+        ValidationUtils.validateNotBlank(imageUrl, "imageUrl");
+        ValidationUtils.validateNotBlank(mimeType, "mimeType");
 
         if(rental==null){
             throw new IllegalArgumentException("RentalReservation은 필수 값입니다.");
@@ -55,11 +56,5 @@ public class AiImage {
                 .imageUrl(imageUrl)
                 .mimeType(mimeType)
                 .build();
-    }
-
-    private static void validateNotBlank(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + "는 필수 값입니다.");
-        }
     }
 }

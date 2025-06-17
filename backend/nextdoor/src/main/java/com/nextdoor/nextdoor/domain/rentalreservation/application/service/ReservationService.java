@@ -1,5 +1,6 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.application.service;
 
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.Money;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationSaveRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationStatusUpdateRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationUpdateRequestDto;
@@ -63,8 +64,8 @@ public class ReservationService {
 
         rentalReservation.updateStartDate(reservationUpdateRequestDto.getStartDate());
         rentalReservation.updateEndDate(reservationUpdateRequestDto.getEndDate());
-        rentalReservation.updateRentalFee(reservationUpdateRequestDto.getRentalFee());
-        rentalReservation.updateDeposit(reservationUpdateRequestDto.getDeposit());
+        rentalReservation.updateRentalFee(new Money(reservationUpdateRequestDto.getRentalFee()));
+        rentalReservation.updateDeposit(new Money(reservationUpdateRequestDto.getDeposit()));
 
         return ReservationResponseDto.from(
                 rentalReservation,
