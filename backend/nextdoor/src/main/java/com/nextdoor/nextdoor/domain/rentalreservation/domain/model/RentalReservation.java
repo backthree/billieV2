@@ -175,12 +175,6 @@ public class RentalReservation {
         this.finalAmount = amount;
     }
 
-    public void validateRemittancePendingState() {
-        if (this.rentalReservationStatus != RentalReservationStatus.REMITTANCE_REQUESTED) {
-            throw new InvalidRentalStatusException("송금 대기 상태가 아닙니다.");
-        }
-    }
-
     private void validateAmount(BigDecimal amount) {
         if (amount == null) {
             throw new InvalidAmountException("송금 금액은 필수입니다.");
@@ -192,18 +186,10 @@ public class RentalReservation {
     }
 
     public void saveAiImage(AiImageType imageType, String imageUrl, String mimeType) {
-        validateNotBlank(imageUrl, "imageUrl");
-        validateNotBlank(mimeType, "mimeType");
-        validateQuantityLimit();
-        validateNoDuplicate(imageUrl);
-
-        AiImage aiImage = AiImage.builder()
-                .rental(this)
-                .type(imageType)
-                .imageUrl(imageUrl)
-                .mimeType(mimeType)
-                .build();
-        aiImages.add(aiImage);
+        AiImage newImage = AiImage.create(this, imageType, imageUrl, mimeType);
+        AiImages imagesWrapper = new AiImages(this.aiImages);
+        imagesWrapper.addImage(newImage);
+        this.aiImages.add(newImage);
     }
 
     public void updateStatus(RentalReservationStatus rentalReservationStatus){
@@ -211,7 +197,6 @@ public class RentalReservation {
         this.rentalReservationProcess = getRentalProcessForStatus(rentalReservationStatus);
     }
 
-    // Methods moved from Reservation
     public void updateStartDate(LocalDate startDate) {
         this.startDate = startDate;
     }
@@ -226,26 +211,6 @@ public class RentalReservation {
 
     public void updateDeposit(BigDecimal deposit) {
         this.deposit = deposit;
-    }
-
-    private void validateNotBlank(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + "는 필수 값입니다.");
-        }
-    }
-
-    private void validateQuantityLimit() {
-        if (aiImages.size() >= 10) {
-            throw new RentalImageUploadException("최대 등록 가능 이미지 수를 초과했습니다.");
-        }
-    }
-
-    private void validateNoDuplicate(String imageUrl) {
-        boolean exists = aiImages.stream()
-                .anyMatch(img -> img.getImageUrl().equals(imageUrl));
-        if (exists) {
-            throw new IllegalArgumentException("이미 등록된 이미지 URL입니다: " + imageUrl);
-        }
     }
 
     private RentalReservationProcess getRentalProcessForStatus(RentalReservationStatus status) {
