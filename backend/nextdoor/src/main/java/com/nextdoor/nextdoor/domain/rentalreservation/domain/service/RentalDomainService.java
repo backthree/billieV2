@@ -26,7 +26,6 @@ public class RentalDomainService {
             rentalReservation.updateStatus(RentalReservationStatus.BEFORE_AND_AFTER_COMPARED);
         } else {
             rentalReservation.updateStatus(RentalReservationStatus.RENTAL_COMPLETED);
-            rentalReservation.updateDealCount();
         }
     }
 }
