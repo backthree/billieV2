@@ -1,7 +1,7 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.application.listener;
 
 import com.nextdoor.nextdoor.domain.aianalysis.event.out.AiCompareAnalysisCompletedEvent;
-import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalService;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalImageAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
@@ -11,18 +11,18 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AiCompareAnalysisCompletedEventListener {
 
-    private final RentalService rentalService;
+    private final RentalImageAnalysisService rentalImageAnalysisService;
 
     @Async("asyncExecutor")
     @EventListener
     public void handleAiCompareAnalysisCompletedEvent(AiCompareAnalysisCompletedEvent aiCompareAnalysisCompletedEvent) {
-        rentalService.updateComparedAnalysis(
+        rentalImageAnalysisService.updateComparedAnalysis(
                 aiCompareAnalysisCompletedEvent.getRentalId(),
                 aiCompareAnalysisCompletedEvent.getOverallComparisonResult()
         );
-        rentalService.deleteAiImageComparisonPairByRentalId(aiCompareAnalysisCompletedEvent.getRentalId());
+        rentalImageAnalysisService.deleteAiImageComparisonPairByRentalId(aiCompareAnalysisCompletedEvent.getRentalId());
         aiCompareAnalysisCompletedEvent.getMatchingResults()
-                .forEach(matchingResult -> rentalService.createAiImageComparisonPair(
+                .forEach(matchingResult -> rentalImageAnalysisService.createAiImageComparisonPair(
                         aiCompareAnalysisCompletedEvent.getRentalId(),
                         matchingResult.getBeforeImageId(),
                         matchingResult.getAfterImageId(),

@@ -1,7 +1,7 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.application.listener;
 
 import com.nextdoor.nextdoor.domain.aianalysis.event.out.AiAnalysisCompletedEvent;
-import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalService;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalImageAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -12,13 +12,13 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AiAnalysisCompletedEventListener {
 
-    private final RentalService rentalService;
+    private final RentalImageAnalysisService rentalImageAnalysisService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Async("asyncExecutor")
     @EventListener
     public void handleAiAnalysisCompletedEvent(AiAnalysisCompletedEvent aiAnalysisCompletedEvent) {
-        rentalService.updateDamageAnalysis(
+        rentalImageAnalysisService.updateDamageAnalysis(
                 aiAnalysisCompletedEvent.getRentalId(),
                 aiAnalysisCompletedEvent.getDamageAnalysis()
         );

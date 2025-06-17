@@ -12,7 +12,9 @@ import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.UpdateAccountResponse;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.UploadImageResponse;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.mapper.RentalReservationMapper;
-import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalService;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalImageAnalysisService;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalQueryService;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalSettlementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,7 +33,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RentalController {
 
-    private final RentalService rentalService;
+    private final RentalImageAnalysisService rentalImageAnalysisService;
+    private final RentalSettlementService rentalSettlementService;
+    private final RentalQueryService rentalQueryService;
     private final RentalReservationMapper rentalReservationMapper;
 
     @GetMapping
@@ -44,7 +48,7 @@ public class RentalController {
     ) {
         RetrieveRentalsRequest retrieveRentalsRequest = new RetrieveRentalsRequest(userRole, condition);
         SearchRentalCommand command = rentalReservationMapper.toCommand(userId, retrieveRentalsRequest, pageable);
-        Page<SearchRentalResult> results = rentalService.searchRentals(command);
+        Page<SearchRentalResult> results = rentalQueryService.searchRentals(command);
         Page<RentalDetailResponse> responsePage = results.map(rentalReservationMapper::toResponse);
 
         return ResponseEntity.ok(responsePage);
@@ -61,7 +65,7 @@ public class RentalController {
                 .build();
 
         UploadImageCommand command = rentalReservationMapper.toUploadImageCommand(userId, rentalId, request);
-        UploadImageResult result = rentalService.registerBeforePhoto(command);
+        UploadImageResult result = rentalImageAnalysisService.registerBeforePhoto(command);
         UploadImageResponse response = rentalReservationMapper.toUploadImageResponse(result);
 
         return ResponseEntity.ok(response);
@@ -70,7 +74,7 @@ public class RentalController {
     @GetMapping("/{rentalId}/request-remittance")
     public ResponseEntity<RemittanceResponse> requestRemittance(@PathVariable Long rentalId) {
         RequestRemittanceCommand command = rentalReservationMapper.toCommand(rentalId);
-        RequestRemittanceResult result = rentalService.requestRemittance(command);
+        RequestRemittanceResult result = rentalSettlementService.requestRemittance(command);
         RemittanceResponse response = rentalReservationMapper.toResponse(result);
 
         return ResponseEntity.ok(response);
@@ -78,7 +82,7 @@ public class RentalController {
 
     @GetMapping("/{rentalId}/remittance-data")
     public ResponseEntity<RemittanceResponse> getRemittanceData(@PathVariable Long rentalId) {
-        RequestRemittanceResult result = rentalService.getRemittanceData(rentalId);
+        RequestRemittanceResult result = rentalSettlementService.getRemittanceData(rentalId);
         RemittanceResponse response = rentalReservationMapper.toResponse(result);
 
         return ResponseEntity.ok(response);
@@ -95,7 +99,7 @@ public class RentalController {
                 .build();
 
         UploadImageCommand command = rentalReservationMapper.toUploadImageCommand(userId, rentalId, request);
-        UploadImageResult result = rentalService.registerAfterPhoto(command);
+        UploadImageResult result = rentalImageAnalysisService.registerAfterPhoto(command);
         UploadImageResponse response = rentalReservationMapper.toUploadImageResponse(result);
 
         return ResponseEntity.ok(response);
@@ -103,7 +107,7 @@ public class RentalController {
 
     @GetMapping("/{rentalId}/ai-analysis")
     ResponseEntity<AiComparisonResponse> getAiAnalysis(@PathVariable Long rentalId){
-        AiComparisonResult result = rentalService.getAiAnalysis(rentalId);
+        AiComparisonResult result = rentalImageAnalysisService.getAiAnalysis(rentalId);
         AiComparisonResponse response = rentalReservationMapper.toResponse(result);
 
         return ResponseEntity.ok(response);
@@ -115,7 +119,7 @@ public class RentalController {
             @Valid @RequestBody UpdateAccountRequest request) {
 
         UpdateAccountCommand command = rentalReservationMapper.toUpdateAccountCommand(rentalId, request);
-        UpdateAccountResult result = rentalService.updateAccount(command);
+        UpdateAccountResult result = rentalSettlementService.updateAccount(command);
         UpdateAccountResponse response = rentalReservationMapper.toUpdateAccountResponse(result);
 
         return ResponseEntity.ok(response);
@@ -125,7 +129,7 @@ public class RentalController {
     public ResponseEntity<ManagedRentalCountResponse> getManagedRentalCount(
             @RequestParam Long userId) {
 
-        ManagedRentalCountResult result = rentalService.countManagedRentals(userId);
+        ManagedRentalCountResult result = rentalQueryService.countManagedRentals(userId);
         ManagedRentalCountResponse response = rentalReservationMapper.toManagedRentalCountResponse(result);
 
         return ResponseEntity.ok(response);
@@ -135,7 +139,7 @@ public class RentalController {
     public ResponseEntity<RentalDetailResponse> getRentalById(
             @PathVariable Long rentalId) {
 
-        SearchRentalResult result = rentalService.getRentalById(rentalId);
+        SearchRentalResult result = rentalQueryService.getRentalById(rentalId);
         RentalDetailResponse response = rentalReservationMapper.toResponse(result);
 
         return ResponseEntity.ok(response);
@@ -146,7 +150,7 @@ public class RentalController {
             @PathVariable Long rentalId) {
 
         DeleteRentalCommand command = rentalReservationMapper.toDeleteCommand(rentalId);
-        DeleteRentalResult result = rentalService.deleteRental(command);
+        DeleteRentalResult result = rentalQueryService.deleteRental(command);
         DeleteRentalResponse response = rentalReservationMapper.toDeleteResponse(result);
 
         if (result.isSuccess()) {

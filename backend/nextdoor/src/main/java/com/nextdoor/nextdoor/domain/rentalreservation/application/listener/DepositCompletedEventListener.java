@@ -4,7 +4,7 @@ import com.nextdoor.nextdoor.domain.fintech.event.DepositCompletedEvent;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationProcess;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.message.RentalStatusMessage;
-import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalService;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalSettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -16,13 +16,13 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class DepositCompletedEventListener {
 
-    private final RentalService rentalService;
+    private final RentalSettlementService rentalSettlementService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Async("asyncExecutor")
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleDepositCompletedEvent(DepositCompletedEvent event) {
-        rentalService.completeDepositProcessing(event);
+        rentalSettlementService.completeDepositProcessing(event);
 
         messagingTemplate.convertAndSend(
                 "/topic/rental-reservation/" + event.getRentalId() + "/status",

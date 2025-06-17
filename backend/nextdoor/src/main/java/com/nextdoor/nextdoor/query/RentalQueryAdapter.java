@@ -62,8 +62,8 @@ public class RentalQueryAdapter implements RentalQueryPort {
                 .select(Projections.fields(SearchRentalResult.class,
                         rentalReservation.id.as("id"),
                         rentalReservation.postId,
-                        rentalReservation.startDate.as("startDate"),
-                        rentalReservation.endDate.as("endDate"),
+                        rentalReservation.period.startDate.as("startDate"),
+                        rentalReservation.period.endDate.as("endDate"),
                         rentalReservation.rentalFee,
                         rentalReservation.deposit,
                         rentalReservation.ownerId,
@@ -118,10 +118,10 @@ public class RentalQueryAdapter implements RentalQueryPort {
                                 member.profileImageUrl.as("ownerProfileImageUrl"),
                                 rentalReservation.finalAmount,
                                 rentalReservation.deposit,
-                                rentalReservation.accountNo,
-                                rentalReservation.bankCode,
-                                rentalReservation.startDate,
-                                rentalReservation.endDate
+                                rentalReservation.accountInfo.accountNo,
+                                rentalReservation.accountInfo.bankCode,
+                                rentalReservation.period.startDate,
+                                rentalReservation.period.endDate
                         ))
                         .from(rentalReservation)
                         .join(member).on(rentalReservation.ownerId.eq(member.id))
@@ -192,8 +192,8 @@ public class RentalQueryAdapter implements RentalQueryPort {
                 .select(Projections.fields(SearchRentalResult.class,
                         rentalReservation.id.as("id"),
                         rentalReservation.postId,
-                        rentalReservation.startDate.as("startDate"),
-                        rentalReservation.endDate.as("endDate"),
+                        rentalReservation.period.startDate.as("startDate"),
+                        rentalReservation.period.endDate.as("endDate"),
                         rentalReservation.rentalFee,
                         rentalReservation.deposit,
                         rentalReservation.ownerId,

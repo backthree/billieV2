@@ -5,7 +5,7 @@ import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.R
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationUpdateRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.response.ReservationResponseDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.service.ReservationService;
-import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalService;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalQueryService;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.SearchRentalCommand;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import java.net.URI;
 public class ReservationController {
 
     private final ReservationService reservationService;
-    private final RentalService rentalService;
+    private final RentalQueryService rentalQueryService;
 
     @PostMapping
     public ResponseEntity<ReservationResponseDto> createReservation(
@@ -79,8 +79,8 @@ public class ReservationController {
                 .condition("ACTIVE")
                 .pageable(pageable)
                 .build();
-        
-        return ResponseEntity.ok(rentalService.searchRentals(command));
+
+        return ResponseEntity.ok(rentalQueryService.searchRentals(command));
     }
 
     @GetMapping("/received")
@@ -94,7 +94,7 @@ public class ReservationController {
                 .condition("ACTIVE")
                 .pageable(pageable)
                 .build();
-        
-        return ResponseEntity.ok(rentalService.searchRentals(command));
+
+        return ResponseEntity.ok(rentalQueryService.searchRentals(command));
     }
 }

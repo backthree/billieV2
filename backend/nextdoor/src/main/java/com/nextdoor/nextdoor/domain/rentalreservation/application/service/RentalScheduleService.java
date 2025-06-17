@@ -15,14 +15,14 @@ public class RentalScheduleService {
 
     private final Scheduler scheduler;
     @Lazy
-    private final RentalEndService rentalEndService; // 주입받기
+    private final RentalEndService rentalEndService;
 
     public void scheduleRentalEnd(Long rentalId) {
         try {
             JobDetail endJob = JobBuilder.newJob(RentalEndJob.class)
                     .withIdentity("rentalEndJob" + rentalId, "rentalJobs")
                     .usingJobData("rentalId", rentalId)
-                    .usingJobData("rentalEndServiceBeanName", "rentalEndService") // 서비스 빈 이름 추가
+                    .usingJobData("rentalEndServiceBeanName", "rentalEndService")
                     .build();
 
             //테스트 : 스케줄러 생성 20초 후에 실행
@@ -37,7 +37,6 @@ public class RentalScheduleService {
             scheduler.scheduleJob(endJob, endTrigger);
             System.out.println("[DEBUG_LOG] Job scheduled successfully for rental ID: " + rentalId);
 
-            // Verify scheduler is running
             if (scheduler.isStarted()) {
                 System.out.println("[DEBUG_LOG] Scheduler is running");
             } else {
