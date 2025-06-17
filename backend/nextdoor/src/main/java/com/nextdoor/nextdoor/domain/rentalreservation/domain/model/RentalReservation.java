@@ -59,13 +59,8 @@ public class RentalReservation {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @NotNull
-    @Column(name = "start_date")
-    private LocalDate startDate;
-
-    @NotNull
-    @Column(name = "end_date")
-    private LocalDate endDate;
+    @Embedded
+    private Period period;
 
     @Embedded
     @AttributeOverrides({
@@ -92,12 +87,6 @@ public class RentalReservation {
     private Long postId;
 
     public static RentalReservation create(
-            List<AiImage> initialAiImages,
-            RentalReservationStatus rentalReservationStatus,
-            String damageAnalysis,
-            String accountNo,
-            String bankCode,
-            Long depositId,
             LocalDate startDate,
             LocalDate endDate,
             Money rentalFee,
@@ -106,42 +95,44 @@ public class RentalReservation {
             Long renterId,
             Long postId) {
 
-        AiImages images = new AiImages(initialAiImages);
+        Period period = new Period(startDate, endDate);
 
         return RentalReservation.builder()
-                .aiImages(images.getImages())
-                .rentalReservationStatus(rentalReservationStatus)
-                .rentalReservationProcess(getRentalProcessForStatus(rentalReservationStatus))
-                .damageAnalysis(damageAnalysis)
-                .createdAt(LocalDateTime.now())
-                .accountInfo(new AccountInfo(accountNo, bankCode))
-                .depositId(depositId)
-                .startDate(startDate)
-                .endDate(endDate)
+                .period(period)
                 .rentalFee(rentalFee)
                 .deposit(deposit)
                 .ownerId(ownerId)
                 .renterId(renterId)
                 .postId(postId)
+                .rentalReservationStatus(RentalReservationStatus.PENDING)
+                .rentalReservationProcess(getRentalProcessForStatus(RentalReservationStatus.PENDING))
+                .createdAt(LocalDateTime.now())
+                .aiImages(new ArrayList<>())
+                .accountInfo(new AccountInfo("", ""))
+                .damageAnalysis(null)
+                .comparedAnalysis(null)
+                .depositId(null)
+                .finalAmount(null)
                 .build();
     }
 
     @Builder(access = AccessLevel.PRIVATE)
     private RentalReservation(List<AiImage> aiImages, RentalReservationStatus rentalReservationStatus, RentalReservationProcess rentalReservationProcess,
-                              String damageAnalysis, LocalDateTime createdAt, AccountInfo accountInfo, Long depositId,
-                              LocalDate startDate, LocalDate endDate, Money rentalFee, Money deposit,
+                              String damageAnalysis, String comparedAnalysis, LocalDateTime createdAt, AccountInfo accountInfo, Long depositId,
+                              Period period, Money rentalFee, Money deposit, Money finalAmount,
                               Long ownerId, Long renterId, Long postId) {
         this.aiImages = aiImages;
         this.rentalReservationStatus = rentalReservationStatus;
         this.rentalReservationProcess = rentalReservationProcess;
         this.damageAnalysis = damageAnalysis;
+        this.comparedAnalysis = comparedAnalysis;
         this.createdAt = createdAt;
         this.accountInfo = accountInfo;
         this.depositId = depositId;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.period = period;
         this.rentalFee = rentalFee;
         this.deposit = deposit;
+        this.finalAmount = finalAmount;
         this.ownerId = ownerId;
         this.renterId = renterId;
         this.postId = postId;
@@ -222,11 +213,11 @@ public class RentalReservation {
     }
 
     public void updateStartDate(LocalDate startDate) {
-        this.startDate = startDate;
+        this.period = new Period(startDate, this.period.getEndDate());
     }
 
     public void updateEndDate(LocalDate endDate) {
-        this.endDate = endDate;
+        this.period = new Period(this.period.getStartDate(), endDate);
     }
 
     public void updateRentalFee(Money rentalFee) {

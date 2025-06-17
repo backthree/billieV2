@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AiImages {
-    private static int MAX_SIZE = 10;
+    private static final int MAX_SIZE = 10;
     private List<AiImage> images = new ArrayList<>();
 
     public AiImages(List<AiImage> images) {
