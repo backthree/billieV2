@@ -138,6 +138,36 @@ public class RentalReservation {
         this.postId = postId;
     }
 
+    public void updateStartDate(LocalDate startDate) {
+        this.period = new Period(startDate, this.period.getEndDate());
+    }
+
+    public void updateEndDate(LocalDate endDate) {
+        this.period = new Period(this.period.getStartDate(), endDate);
+    }
+
+    public void updateRentalFee(Money rentalFee) {
+        this.rentalFee = rentalFee;
+    }
+
+    public void updateDeposit(Money deposit) {
+        this.deposit = deposit;
+    }
+
+    public void updateReservationDetails(LocalDate newStartDate, LocalDate newEndDate, Money newRentalFee, Money newDeposit) {
+        if (this.rentalReservationStatus != RentalReservationStatus.PENDING){
+            throw new InvalidRentalStatusException("현재 대여 상태(" + this.rentalReservationStatus + ")에서는 예약 정보를 수정할 수 없습니다.");
+        }
+
+        Period newPeriod = new Period(newStartDate, newEndDate);
+
+        updateStartDate(newStartDate);
+        updateEndDate(newEndDate);
+        updateRentalFee(newRentalFee);
+        updateDeposit(newDeposit);
+        updateStatus(RentalReservationStatus.PENDING);
+    }
+
     public void processRemittanceRequest() {
         updateStatus(RentalReservationStatus.REMITTANCE_REQUESTED);
     }
@@ -210,22 +240,6 @@ public class RentalReservation {
     public void updateStatus(RentalReservationStatus rentalReservationStatus){
         this.rentalReservationStatus = rentalReservationStatus;
         this.rentalReservationProcess = getRentalProcessForStatus(rentalReservationStatus);
-    }
-
-    public void updateStartDate(LocalDate startDate) {
-        this.period = new Period(startDate, this.period.getEndDate());
-    }
-
-    public void updateEndDate(LocalDate endDate) {
-        this.period = new Period(this.period.getStartDate(), endDate);
-    }
-
-    public void updateRentalFee(Money rentalFee) {
-        this.rentalFee = rentalFee;
-    }
-
-    public void updateDeposit(Money deposit) {
-        this.deposit = deposit;
     }
 
     private static RentalReservationProcess getRentalProcessForStatus(RentalReservationStatus status) {
