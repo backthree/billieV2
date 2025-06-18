@@ -47,14 +47,14 @@ public class RentalImageAnalysisServiceImpl implements RentalImageAnalysisServic
             throw new InvalidRenterIdException("요청한 Renter ID가 실제 Renter ID와 일치하지 않습니다.");
         }
 
-        String path = rentalImageDomainService.createImagePath(
-                String.valueOf(rentalReservation.getId()),
-                AiImageType.BEFORE
-        );
-
         List<String> imageUrls = new ArrayList<>();
         for(MultipartFile image : command.getImages()){
-            S3UploadResult imageUploadResult = s3ImageUploadService.upload(image, path);
+            S3UploadResult imageUploadResult = s3ImageUploadService.upload(
+                    image,
+                    rentalReservation.getId(),
+                    AiImageType.BEFORE.toString()
+            );
+
             imageUrls.add(imageUploadResult.getUrl());
 
             rentalImageDomainService.processRentalImage(
@@ -86,14 +86,14 @@ public class RentalImageAnalysisServiceImpl implements RentalImageAnalysisServic
             throw new InvalidRenterIdException("요청한 Owner ID가 실제 Owner ID와 일치하지 않습니다.");
         }
 
-        String path = rentalImageDomainService.createImagePath(
-                String.valueOf(rentalReservation.getId()),
-                AiImageType.AFTER
-        );
-
         List<String> imageUrls = new ArrayList<>();
         for(MultipartFile image : command.getImages()){
-            S3UploadResult imageUploadResult = s3ImageUploadService.upload(image, path);
+            S3UploadResult imageUploadResult = s3ImageUploadService.upload(
+                    image,
+                    rentalReservation.getId(),
+                    AiImageType.AFTER.toString()
+            );
+
             imageUrls.add(imageUploadResult.getUrl());
 
             rentalImageDomainService.processRentalImage(

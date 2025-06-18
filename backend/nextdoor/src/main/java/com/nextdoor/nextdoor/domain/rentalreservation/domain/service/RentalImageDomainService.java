@@ -30,8 +30,4 @@ public class RentalImageDomainService {
         RentalImageStrategy strategy = rentalImageStrategies.get(imageType);
         strategy.updateRentalImage(rentalReservation, imageUrl, mimeType);
     }
-
-    public String createImagePath(String rentalId, AiImageType imageType) {
-        return rentalImageStrategies.get(imageType).createImagePath(rentalId);
-    }
 }

@@ -21,11 +21,6 @@ public class BeforeImageStrategy implements RentalImageStrategy {
     }
 
     @Override
-    public String createImagePath(String rentalId) {
-        return "rentals/" + rentalId + "/before";
-    }
-
-    @Override
     public void validateImageUploadAllowed(RentalReservation rentalReservation) {
         if(rentalReservation.getRentalReservationStatus() != RentalReservationStatus.REMITTANCE_REQUESTED) {
             throw new InvalidRentalStatusException("이미지 업로드가 불가능한 대여 상태입니다");

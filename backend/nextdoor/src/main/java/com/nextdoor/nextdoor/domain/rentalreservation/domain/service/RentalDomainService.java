@@ -15,12 +15,6 @@ import java.math.BigDecimal;
 @Service
 public class RentalDomainService {
 
-    public void validateRentalForRemittance(RentalReservation rentalReservation, Long renterId, ReservationDto reservation) {
-        if (!reservation.getRenterId().equals(renterId)) {
-            throw new InvalidRenterIdException("요청한 대여자 ID가 실제 대여자 ID와 일치하지 않습니다.");
-        }
-    }
-
     public void processAfterImageRegistration(RentalReservation rentalReservation, BigDecimal depositAmount) {
         if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) > 0) {
             rentalReservation.updateStatus(RentalReservationStatus.BEFORE_AND_AFTER_COMPARED);

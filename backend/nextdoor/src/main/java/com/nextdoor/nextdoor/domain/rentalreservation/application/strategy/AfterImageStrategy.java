@@ -21,11 +21,6 @@ public class AfterImageStrategy implements RentalImageStrategy {
     }
 
     @Override
-    public String createImagePath(String rentalId) {
-        return "rentals/" + rentalId + "/after";
-    }
-
-    @Override
     public void validateImageUploadAllowed(RentalReservation rentalReservation) {
         if(rentalReservation.getRentalReservationStatus() != RentalReservationStatus.RENTAL_PERIOD_ENDED){
             throw new InvalidRentalStatusException("대여 이미지 업로드 불가능.");
