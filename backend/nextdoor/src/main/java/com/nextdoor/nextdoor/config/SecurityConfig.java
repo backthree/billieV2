@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.auth.config;
+package com.nextdoor.nextdoor.config;
 
 import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2AuthorizationRequestBasedOnCookieRepository;
 import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2SuccessHandler;
