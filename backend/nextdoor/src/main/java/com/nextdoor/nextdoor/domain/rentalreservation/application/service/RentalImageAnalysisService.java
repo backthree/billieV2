@@ -13,12 +13,12 @@ public interface RentalImageAnalysisService {
     /**
      * 대여 전 사진을 등록합니다.
      */
-    UploadImageResult registerBeforePhoto(UploadImageCommand command);
+    UploadImageResult registerBeforeImage(UploadImageCommand command);
 
     /**
      * 대여 후 사진을 등록합니다.
      */
-    UploadImageResult registerAfterPhoto(UploadImageCommand command);
+    UploadImageResult registerAfterImage(UploadImageCommand command);
 
     /**
      * AI 분석 결과를 조회합니다.

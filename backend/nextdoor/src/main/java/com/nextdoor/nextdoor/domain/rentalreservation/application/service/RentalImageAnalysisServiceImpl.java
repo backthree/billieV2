@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 @Service
 @RequiredArgsConstructor
@@ -36,62 +37,51 @@ public class RentalImageAnalysisServiceImpl implements RentalImageAnalysisServic
 
     @Override
     @Transactional
-    public UploadImageResult registerBeforePhoto(UploadImageCommand command) {
-        RentalReservation rentalReservation = rentalReservationRepository.findById(command.getRentalId())
-                .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
-
-        ReservationDto reservation = reservationQueryPort.getReservationByRentalId(rentalReservation.getId())
-                .orElseThrow(() -> new NoSuchReservationException("예약 정보가 존재하지 않습니다."));
-
-        if (!reservation.getRenterId().equals(command.getUserId())) {
-            throw new InvalidRenterIdException("요청한 Renter ID가 실제 Renter ID와 일치하지 않습니다.");
-        }
-
-        List<String> imageUrls = new ArrayList<>();
-        for(MultipartFile image : command.getImages()){
-            S3UploadResult imageUploadResult = s3ImageUploadService.upload(
-                    image,
-                    rentalReservation.getId(),
-                    AiImageType.BEFORE.toString()
-            );
-
-            imageUrls.add(imageUploadResult.getUrl());
-
-            rentalImageDomainService.processRentalImage(
-                    rentalReservation,
-                    imageUploadResult.getUrl(),
-                    image.getContentType(),
-                    AiImageType.BEFORE
-            );
-        }
-
-        LocalDateTime uploadedAt = LocalDateTime.now();
-        return UploadImageResult.builder()
-                .rentalId(rentalReservation.getId())
-                .imageUrls(imageUrls)
-                .uploadedAt(uploadedAt)
-                .build();
+    public UploadImageResult registerBeforeImage(UploadImageCommand command) {
+        return processImageUpload(
+                command,
+                AiImageType.BEFORE,
+                (reservation, commandUserId) -> {
+                    if (!reservation.getRenterId().equals(commandUserId)) {
+                        throw new InvalidRenterIdException("요청한 Renter ID가 실제 Renter ID와 일치하지 않습니다.");
+                    }
+                }
+        );
     }
 
     @Override
     @Transactional
-    public UploadImageResult registerAfterPhoto(UploadImageCommand command) {
+    public UploadImageResult registerAfterImage(UploadImageCommand command) {
+        return processImageUpload(
+                command,
+                AiImageType.AFTER,
+                (reservation, commandUserId) -> {
+                    if (!reservation.getOwnerId().equals(commandUserId)) {
+                        throw new InvalidRenterIdException("요청한 Owner ID가 실제 Owner ID와 일치하지 않습니다.");
+                    }
+                }
+        );
+    }
+
+    private UploadImageResult processImageUpload(
+            UploadImageCommand command,
+            AiImageType imageType,
+            BiConsumer<ReservationDto, Long> userValidationConsumer
+    ) {
         RentalReservation rentalReservation = rentalReservationRepository.findById(command.getRentalId())
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
         ReservationDto reservation = reservationQueryPort.getReservationByRentalId(rentalReservation.getId())
                 .orElseThrow(() -> new NoSuchReservationException("예약 정보가 존재하지 않습니다."));
 
-        if (!reservation.getOwnerId().equals(command.getUserId())) {
-            throw new InvalidRenterIdException("요청한 Owner ID가 실제 Owner ID와 일치하지 않습니다.");
-        }
+        userValidationConsumer.accept(reservation, command.getUserId());
 
         List<String> imageUrls = new ArrayList<>();
-        for(MultipartFile image : command.getImages()){
+        for (MultipartFile image : command.getImages()) {
             S3UploadResult imageUploadResult = s3ImageUploadService.upload(
                     image,
                     rentalReservation.getId(),
-                    AiImageType.AFTER.toString()
+                    imageType.toString()
             );
 
             imageUrls.add(imageUploadResult.getUrl());
@@ -100,7 +90,7 @@ public class RentalImageAnalysisServiceImpl implements RentalImageAnalysisServic
                     rentalReservation,
                     imageUploadResult.getUrl(),
                     image.getContentType(),
-                    AiImageType.AFTER
+                    imageType
             );
         }
 

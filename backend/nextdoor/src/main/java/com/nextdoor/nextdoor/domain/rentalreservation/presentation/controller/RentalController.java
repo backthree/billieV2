@@ -65,7 +65,7 @@ public class RentalController {
                 .build();
 
         UploadImageCommand command = rentalReservationMapper.toUploadImageCommand(userId, rentalId, request);
-        UploadImageResult result = rentalImageAnalysisService.registerBeforePhoto(command);
+        UploadImageResult result = rentalImageAnalysisService.registerBeforeImage(command);
         UploadImageResponse response = rentalReservationMapper.toUploadImageResponse(result);
 
         return ResponseEntity.ok(response);
@@ -99,7 +99,7 @@ public class RentalController {
                 .build();
 
         UploadImageCommand command = rentalReservationMapper.toUploadImageCommand(userId, rentalId, request);
-        UploadImageResult result = rentalImageAnalysisService.registerAfterPhoto(command);
+        UploadImageResult result = rentalImageAnalysisService.registerAfterImage(command);
         UploadImageResponse response = rentalReservationMapper.toUploadImageResponse(result);
 
         return ResponseEntity.ok(response);
