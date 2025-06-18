@@ -29,7 +29,7 @@ public class RentalEndService {
             RentalReservation rental = rentalRepository.findById(rentalId)
                     .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
-            rental.processRentalPeriodEnd();
+            rental.endRentalPeriod();
 
             String renterUuid = memberUuidQueryPort.getMemberUuidByRentalIdAndRole(
                     rental.getId(),

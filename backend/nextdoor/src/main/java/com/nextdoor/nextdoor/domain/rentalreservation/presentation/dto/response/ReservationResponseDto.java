@@ -30,10 +30,10 @@ public class ReservationResponseDto {
         response.reservationId = rentalReservation.getId();
         response.postTitle = post.getTitle();
         response.postProductImage = post.getProductImage();
-        response.startDate = rentalReservation.getStartDate();
-        response.endDate = rentalReservation.getEndDate();
-        response.rentalFee = rentalReservation.getRentalFee();
-        response.deposit = rentalReservation.getDeposit();
+        response.startDate = rentalReservation.getPeriod().getStartDate();
+        response.endDate = rentalReservation.getPeriod().getEndDate();
+        response.rentalFee = rentalReservation.getRentalFee().getAmount();
+        response.deposit = rentalReservation.getDeposit().getAmount();
         response.status = rentalReservation.getRentalReservationStatus().name();
         response.ownerName = post.getAuthorName();
         response.ownerProfileImageUrl = post.getAuthorProfileImageUrl();

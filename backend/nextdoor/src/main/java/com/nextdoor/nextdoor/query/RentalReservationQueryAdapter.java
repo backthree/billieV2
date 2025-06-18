@@ -24,8 +24,8 @@ public class RentalReservationQueryAdapter implements ReservationQueryPort {
                         .select(Projections.constructor(
                                 ReservationDto.class,
                                 rental.id.as("reservationId"),
-                                rental.startDate,
-                                rental.endDate,
+                                rental.period.startDate,
+                                rental.period.endDate,
                                 rental.rentalFee,
                                 rental.deposit,
                                 rental.rentalReservationStatus.stringValue(),

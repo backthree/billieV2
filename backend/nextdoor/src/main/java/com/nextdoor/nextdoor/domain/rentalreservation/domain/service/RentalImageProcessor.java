@@ -14,11 +14,11 @@ import java.util.stream.Collectors;
  * 이미지 전략 관리 및 이미지 처리 관련 도메인 규칙 적용
  */
 @Service
-public class RentalImageDomainService {
+public class RentalImageProcessor {
 
     private final Map<AiImageType, RentalImageStrategy> rentalImageStrategies;
 
-    public RentalImageDomainService(List<RentalImageStrategy> strategyList) {
+    public RentalImageProcessor(List<RentalImageStrategy> strategyList) {
         this.rentalImageStrategies = strategyList.stream()
                 .collect(Collectors.toMap(
                         RentalImageStrategy::getImageType,
@@ -29,9 +29,5 @@ public class RentalImageDomainService {
     public void processRentalImage(RentalReservation rentalReservation, String imageUrl, String mimeType, AiImageType imageType) {
         RentalImageStrategy strategy = rentalImageStrategies.get(imageType);
         strategy.updateRentalImage(rentalReservation, imageUrl, mimeType);
-    }
-
-    public String createImagePath(String rentalId, AiImageType imageType) {
-        return rentalImageStrategies.get(imageType).createImagePath(rentalId);
     }
 }

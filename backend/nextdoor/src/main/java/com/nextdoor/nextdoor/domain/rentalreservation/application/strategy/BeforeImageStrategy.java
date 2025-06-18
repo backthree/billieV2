@@ -12,17 +12,12 @@ public class BeforeImageStrategy implements RentalImageStrategy {
     @Override
     public void updateRentalImage(RentalReservation rentalReservation, String imageUrl, String mimeType) {
         validateImageUploadAllowed(rentalReservation);
-        rentalReservation.saveAiImage(getImageType(), imageUrl, mimeType);
+        rentalReservation.addAiImage(getImageType(), imageUrl, mimeType);
     }
 
     @Override
     public AiImageType getImageType() {
         return AiImageType.BEFORE;
-    }
-
-    @Override
-    public String createImagePath(String rentalId) {
-        return "rentals/" + rentalId + "/before";
     }
 
     @Override

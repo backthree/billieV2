@@ -1,5 +1,6 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.application.service;
 
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.Money;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationSaveRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationStatusUpdateRequestDto;
 import com.nextdoor.nextdoor.domain.rentalreservation.presentation.dto.request.ReservationUpdateRequestDto;
@@ -40,16 +41,15 @@ public class ReservationService {
     public ReservationResponseDto createReservation(Long loginUserId, ReservationSaveRequestDto reservationSaveRequestDto) {
         PostDto post = rentalReservationPostQueryPort.findById(reservationSaveRequestDto.getPostId()).orElseThrow();
 
-        RentalReservation rentalReservation = rentalReservationRepository.save(RentalReservation.builder()
-            .startDate(reservationSaveRequestDto.getStartDate())
-            .endDate(reservationSaveRequestDto.getEndDate())
-            .rentalFee(post.getRentalFee())
-            .deposit(post.getDeposit())
-            .rentalReservationStatus(RentalReservationStatus.PENDING)
-            .ownerId(post.getAuthorId())
-            .renterId(loginUserId)
-            .postId(post.getPostId())
-            .build());
+        RentalReservation rentalReservation = RentalReservation.create(
+                reservationSaveRequestDto.getStartDate(),
+                reservationSaveRequestDto.getEndDate(),
+                new Money(post.getRentalFee()),
+                new Money(post.getDeposit()),
+                post.getAuthorId(),
+                loginUserId,
+                post.getPostId()
+        );
 
         ReservationMemberQueryDto member = reservationMemberQueryPort.findById(loginUserId).orElseThrow();
         ReservationResponseDto response = ReservationResponseDto.from(rentalReservation, post, member);
@@ -61,10 +61,12 @@ public class ReservationService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(reservationId).orElseThrow(NoSuchReservationException::new);
         validateOwner(loginUserId, rentalReservation);
 
-        rentalReservation.updateStartDate(reservationUpdateRequestDto.getStartDate());
-        rentalReservation.updateEndDate(reservationUpdateRequestDto.getEndDate());
-        rentalReservation.updateRentalFee(reservationUpdateRequestDto.getRentalFee());
-        rentalReservation.updateDeposit(reservationUpdateRequestDto.getDeposit());
+        rentalReservation.modifyReservationDetails(
+                reservationUpdateRequestDto.getStartDate(),
+                reservationUpdateRequestDto.getEndDate(),
+                new Money(reservationUpdateRequestDto.getRentalFee()),
+                new Money(reservationUpdateRequestDto.getDeposit())
+        );
 
         return ReservationResponseDto.from(
                 rentalReservation,
@@ -113,7 +115,7 @@ public class ReservationService {
 
         validateOwner(loginUserId, rentalReservation);
         validateNotConfirmed(rentalReservation);
-        rentalReservation.updateStatus(reservationStatusUpdateRequestDto.getStatus());
+        rentalReservation.changeStatus(reservationStatusUpdateRequestDto.getStatus());
         return ReservationResponseDto.from(
                 rentalReservation,
                 rentalReservationPostQueryPort.findById(rentalReservation.getPostId()).orElseThrow(),

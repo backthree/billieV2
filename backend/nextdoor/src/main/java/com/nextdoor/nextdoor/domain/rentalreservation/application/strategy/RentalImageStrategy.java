@@ -7,6 +7,5 @@ public interface RentalImageStrategy {
 
     void updateRentalImage(RentalReservation rentalReservation, String imageUrl, String mimeType);
     AiImageType getImageType();
-    String createImagePath(String rentalId);
-    public void validateImageUploadAllowed(RentalReservation rentalReservation);
+    void validateImageUploadAllowed(RentalReservation rentalReservation);
 }
