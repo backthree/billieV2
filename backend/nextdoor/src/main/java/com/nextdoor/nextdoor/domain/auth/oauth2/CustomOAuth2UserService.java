@@ -1,12 +1,12 @@
-package com.nextdoor.nextdoor.domain.auth.service;
+package com.nextdoor.nextdoor.domain.auth.oauth2;
 
-import com.nextdoor.nextdoor.domain.auth.CustomOAuth2User;
+import com.nextdoor.nextdoor.domain.auth.model.CustomOAuth2User;
 import com.nextdoor.nextdoor.domain.auth.exception.UnsupportedOAuth2ProviderException;
 import com.nextdoor.nextdoor.domain.auth.port.AuthFintechCommandPort;
 import com.nextdoor.nextdoor.domain.auth.port.AuthMemberCommandPort;
 import com.nextdoor.nextdoor.domain.auth.port.AuthMemberQueryPort;
-import com.nextdoor.nextdoor.domain.auth.service.dto.MemberCommandDto;
-import com.nextdoor.nextdoor.domain.auth.service.dto.MemberQueryDto;
+import com.nextdoor.nextdoor.domain.auth.dto.MemberCommandDto;
+import com.nextdoor.nextdoor.domain.auth.dto.MemberQueryDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +23,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 @Slf4j

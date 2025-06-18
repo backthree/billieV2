@@ -1,7 +1,7 @@
 package com.nextdoor.nextdoor.config;
 
-import com.nextdoor.nextdoor.domain.auth.OAuth2AuthorizationRequestBasedOnCookieRepository;
-import com.nextdoor.nextdoor.domain.auth.OAuth2SuccessHandler;
+import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2AuthorizationRequestBasedOnCookieRepository;
+import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2SuccessHandler;
 import com.nextdoor.nextdoor.domain.auth.filter.JwtAuthenticationFilter;
 import com.nextdoor.nextdoor.domain.auth.filter.RedirectUrlCookieFilter;
 import lombok.RequiredArgsConstructor;

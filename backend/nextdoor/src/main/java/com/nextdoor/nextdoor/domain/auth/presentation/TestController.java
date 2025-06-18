@@ -1,4 +1,4 @@
-package com.nextdoor.nextdoor.domain.auth.controller;
+package com.nextdoor.nextdoor.domain.auth.presentation;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
