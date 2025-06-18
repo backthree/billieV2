@@ -1,10 +1,10 @@
 package com.nextdoor.nextdoor.domain.rentalreservation.application.listener;
 
 import com.nextdoor.nextdoor.domain.fintech.event.DepositCompletedEvent;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalSettlementService;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationProcess;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.message.RentalStatusMessage;
-import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalSettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
