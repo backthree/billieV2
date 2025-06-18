@@ -2,8 +2,8 @@ package com.nextdoor.nextdoor.domain.rentalreservation.application.service;
 
 import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.*;
 import com.nextdoor.nextdoor.domain.rentalreservation.application.port.*;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.service.RentalDomainService;
-import com.nextdoor.nextdoor.domain.rentalreservation.domain.service.RentalImageDomainService;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.service.RentalCompletionProcessService;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.service.RentalImageProcessor;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.*;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.event.out.DepositProcessingRequestEvent;
 import com.nextdoor.nextdoor.domain.rentalreservation.domain.event.out.RentalCompletedEvent;
@@ -31,8 +31,8 @@ public class RentalImageAnalysisService {
     private final AiImageComparisonPairRepository aiImageComparisonPairRepository;
     private final S3ImageUploadPort s3ImageUploadService;
     private final ReservationQueryPort reservationQueryPort;
-    private final RentalDomainService rentalDomainService;
-    private final RentalImageDomainService rentalImageDomainService;
+    private final RentalCompletionProcessService rentalCompletionProcessService;
+    private final RentalImageProcessor rentalImageProcessor;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -84,7 +84,7 @@ public class RentalImageAnalysisService {
 
             imageUrls.add(imageUploadResult.getUrl());
 
-            rentalImageDomainService.processRentalImage(
+            rentalImageProcessor.processRentalImage(
                     rentalReservation,
                     imageUploadResult.getUrl(),
                     image.getContentType(),
@@ -112,7 +112,7 @@ public class RentalImageAnalysisService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(rentalId)
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
-        rentalReservation.updateDamageAnalysis(damageAnalysis);
+        rentalReservation.recordDamageAnalysis(damageAnalysis); // 이름 변경 적용
     }
 
     @Transactional
@@ -120,12 +120,12 @@ public class RentalImageAnalysisService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(rentalId)
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
-        rentalReservation.updateComparedAnalysis(comparedAnalysis);
+        rentalReservation.recordComparedAnalysis(comparedAnalysis); // 이름 변경 적용
 
         ReservationDto reservationDto = reservationQueryPort.getReservationByRentalId(rentalReservation.getId())
                 .orElseThrow(() -> new NoSuchReservationException("예약 정보가 존재하지 않습니다."));
 
-        rentalDomainService.processAfterImageRegistration(rentalReservation, reservationDto.getDeposit());
+        rentalCompletionProcessService.processAfterImageRegistration(rentalReservation, reservationDto.getDeposit());
 
         if(rentalReservation.getRentalReservationStatus().equals(RentalReservationStatus.BEFORE_AND_AFTER_COMPARED)){
             eventPublisher.publishEvent(DepositProcessingRequestEvent.builder()

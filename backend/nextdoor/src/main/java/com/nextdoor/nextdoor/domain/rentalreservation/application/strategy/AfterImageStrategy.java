@@ -12,7 +12,7 @@ public class AfterImageStrategy implements RentalImageStrategy {
     @Override
     public void updateRentalImage(RentalReservation rentalReservation, String imageUrl, String mimeType) {
         validateImageUploadAllowed(rentalReservation);
-        rentalReservation.saveAiImage(getImageType(), imageUrl, mimeType);
+        rentalReservation.addAiImage(getImageType(), imageUrl, mimeType);
     }
 
     @Override

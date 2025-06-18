@@ -138,43 +138,41 @@ public class RentalReservation {
         this.postId = postId;
     }
 
-    public void updateStartDate(LocalDate startDate) {
+    public void changeStartDate(LocalDate startDate) {
         this.period = new Period(startDate, this.period.getEndDate());
     }
 
-    public void updateEndDate(LocalDate endDate) {
+    public void changeEndDate(LocalDate endDate) {
         this.period = new Period(this.period.getStartDate(), endDate);
     }
 
-    public void updateRentalFee(Money rentalFee) {
+    public void changeRentalFee(Money rentalFee) {
         this.rentalFee = rentalFee;
     }
 
-    public void updateDeposit(Money deposit) {
+    public void changeDeposit(Money deposit) {
         this.deposit = deposit;
     }
 
-    public void updateReservationDetails(LocalDate newStartDate, LocalDate newEndDate, Money newRentalFee, Money newDeposit) {
+    public void modifyReservationDetails(LocalDate newStartDate, LocalDate newEndDate, Money newRentalFee, Money newDeposit) {
         if (this.rentalReservationStatus != RentalReservationStatus.PENDING){
             throw new InvalidRentalStatusException("현재 대여 상태(" + this.rentalReservationStatus + ")에서는 예약 정보를 수정할 수 없습니다.");
         }
 
-        Period newPeriod = new Period(newStartDate, newEndDate);
-
-        updateStartDate(newStartDate);
-        updateEndDate(newEndDate);
-        updateRentalFee(newRentalFee);
-        updateDeposit(newDeposit);
-        updateStatus(RentalReservationStatus.PENDING);
+        changeStartDate(newStartDate);
+        changeEndDate(newEndDate);
+        changeRentalFee(newRentalFee);
+        changeDeposit(newDeposit);
+        changeStatus(RentalReservationStatus.PENDING);
     }
 
-    public void processRemittanceRequest() {
-        updateStatus(RentalReservationStatus.REMITTANCE_REQUESTED);
+    public void requestRemittance() {
+        changeStatus(RentalReservationStatus.REMITTANCE_REQUESTED);
     }
 
-    public void processRemittanceCompletion() {
+    public void completeRemittance() {
         validateRemittanceCompletionStatus();
-        updateStatus(RentalReservationStatus.REMITTANCE_COMPLETED);
+        changeStatus(RentalReservationStatus.REMITTANCE_COMPLETED);
     }
 
     private void validateRemittanceCompletionStatus() {
@@ -183,9 +181,9 @@ public class RentalReservation {
         }
     }
 
-    public void processRentalPeriodEnd() {
+    public void endRentalPeriod() {
         validateRentalPeriodEndStatus();
-        updateStatus(RentalReservationStatus.RENTAL_PERIOD_ENDED);
+        changeStatus(RentalReservationStatus.RENTAL_PERIOD_ENDED);
     }
 
     private void validateRentalPeriodEndStatus() {
@@ -194,26 +192,26 @@ public class RentalReservation {
         }
     }
 
-    public void updateDamageAnalysis(String damageAnalysis) {
+    public void recordDamageAnalysis(String damageAnalysis) {
         this.damageAnalysis = damageAnalysis;
-        updateStatus(RentalReservationStatus.BEFORE_PHOTO_ANALYZED);
+        changeStatus(RentalReservationStatus.BEFORE_PHOTO_ANALYZED);
     }
 
-    public void updateComparedAnalysis(String comparedAnalysis) {
+    public void recordComparedAnalysis(String comparedAnalysis) {
         this.comparedAnalysis = comparedAnalysis;
     }
 
-    public void processUpdateAccountInfo(String accountNo, String bankCode) {
+    public void updateAccountInfo(String accountNo, String bankCode) {
         ValidationUtils.validateNotBlank(accountNo, "accountNo");
         ValidationUtils.validateNotBlank(bankCode, "bankCode");
         this.accountInfo = new AccountInfo(accountNo, bankCode);
 
-        updateStatus(RentalReservationStatus.REMITTANCE_REQUESTED);
+        changeStatus(RentalReservationStatus.REMITTANCE_REQUESTED);
     }
 
-    public void processDepositCompletion(){
+    public void completeDeposit(){
         validateDepositCompletionStatus();
-        updateStatus(RentalReservationStatus.RENTAL_COMPLETED);
+        changeStatus(RentalReservationStatus.RENTAL_COMPLETED);
     }
 
     private void validateDepositCompletionStatus() {
@@ -222,22 +220,22 @@ public class RentalReservation {
         }
     }
 
-    public void updateDepositId(Long depositId) {
+    public void assignDepositId(Long depositId) {
         this.depositId = depositId;
     }
 
-    public void updateFinalAmount(Money amount) {
+    public void changeFinalAmount(Money amount) {
         this.finalAmount = amount;
     }
 
-    public void saveAiImage(AiImageType imageType, String imageUrl, String mimeType) {
+    public void addAiImage(AiImageType imageType, String imageUrl, String mimeType) {
         AiImage newImage = AiImage.create(this, imageType, imageUrl, mimeType);
         AiImages imagesWrapper = new AiImages(this.aiImages);
         imagesWrapper.addImage(newImage);
         this.aiImages.add(newImage);
     }
 
-    public void updateStatus(RentalReservationStatus rentalReservationStatus){
+    public void changeStatus(RentalReservationStatus rentalReservationStatus){
         this.rentalReservationStatus = rentalReservationStatus;
         this.rentalReservationProcess = getRentalProcessForStatus(rentalReservationStatus);
     }

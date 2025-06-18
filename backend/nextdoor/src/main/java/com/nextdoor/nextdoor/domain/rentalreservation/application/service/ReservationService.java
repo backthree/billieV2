@@ -61,7 +61,7 @@ public class ReservationService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(reservationId).orElseThrow(NoSuchReservationException::new);
         validateOwner(loginUserId, rentalReservation);
 
-        rentalReservation.updateReservationDetails(
+        rentalReservation.modifyReservationDetails(
                 reservationUpdateRequestDto.getStartDate(),
                 reservationUpdateRequestDto.getEndDate(),
                 new Money(reservationUpdateRequestDto.getRentalFee()),
@@ -115,7 +115,7 @@ public class ReservationService {
 
         validateOwner(loginUserId, rentalReservation);
         validateNotConfirmed(rentalReservation);
-        rentalReservation.updateStatus(reservationStatusUpdateRequestDto.getStatus());
+        rentalReservation.changeStatus(reservationStatusUpdateRequestDto.getStatus());
         return ReservationResponseDto.from(
                 rentalReservation,
                 rentalReservationPostQueryPort.findById(rentalReservation.getPostId()).orElseThrow(),

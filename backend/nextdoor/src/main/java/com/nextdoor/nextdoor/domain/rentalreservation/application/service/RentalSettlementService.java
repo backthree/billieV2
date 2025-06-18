@@ -30,7 +30,7 @@ public class RentalSettlementService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(command.getRentalId())
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
-        rentalReservation.processRemittanceRequest();
+        rentalReservation.requestRemittance();
 
         return rentalQueryPort.findRemittanceRequestViewData(command.getRentalId())
                 .orElseThrow(() -> new NoSuchReservationException("예약 정보가 존재하지 않습니다."));
@@ -47,7 +47,7 @@ public class RentalSettlementService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(remittanceCompletedEvent.getRentalId())
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
-        rentalReservation.processRemittanceCompletion();
+        rentalReservation.completeRemittance();
 
         //테스트 용도
         rentalScheduleService.scheduleRentalEnd(rentalReservation.getId());
@@ -85,7 +85,7 @@ public class RentalSettlementService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(depositCompletedEvent.getRentalId())
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
-        rentalReservation.processDepositCompletion();
+        rentalReservation.completeDeposit();
     }
 
     @Transactional
@@ -93,7 +93,7 @@ public class RentalSettlementService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(rentalId)
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
-        rentalReservation.updateDepositId(depositId);
+        rentalReservation.assignDepositId(depositId);
     }
 
     @Transactional
@@ -101,8 +101,8 @@ public class RentalSettlementService {
         RentalReservation rentalReservation = rentalReservationRepository.findById(command.getRentalId())
                 .orElseThrow(() -> new NoSuchRentalException("대여 정보가 존재하지 않습니다."));
 
-        rentalReservation.processUpdateAccountInfo(command.getAccountNo(), command.getBankCode());
-        rentalReservation.updateFinalAmount(new Money(command.getFinalAmount()));
+        rentalReservation.updateAccountInfo(command.getAccountNo(), command.getBankCode());
+        rentalReservation.changeFinalAmount(new Money(command.getFinalAmount()));
 
         String renterUuid = memberUuidQueryPort.getMemberUuidByRentalIdAndRole(
                 rentalReservation.getId(),
