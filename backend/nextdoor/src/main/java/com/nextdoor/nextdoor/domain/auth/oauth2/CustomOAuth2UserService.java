@@ -64,9 +64,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             return newMember;
         });
-
-        return new CustomOAuth2User(member.getId().toString(), oAuth2User.getAttributes());
-
+        return new CustomOAuth2User(member.getId().toString(), member.getUuid(), oAuth2User.getAttributes());
     }
 
     @EventListener
