@@ -23,9 +23,8 @@ import java.util.function.Supplier;
 @EnableWebSocketSecurity
 public class WebSocketSecurityConfig {
 
-    private final PathPattern pattern = new PathPatternParser().parse(
-            "/topic/rental-reservation/{uuid}/**"
-    );
+    private final PathPattern pattern = new PathPatternParser()
+            .parse("/topic/rental-reservation/{uuid}/**");
     private final JwtProvider jwtProvider;
 
     @Bean
