@@ -42,7 +42,7 @@ public class WebSocketSecurityConfig {
         }
         PathContainer pathContainer = PathContainer.parsePath(destination);
         if (!pattern.matches(pathContainer)) {
-            return new AuthorizationDecision(false);
+            return new AuthorizationDecision(true);
         }
         String destinationUuid = pattern.matchAndExtract(pathContainer).getUriVariables().get("uuid");
         String token = object.getMessage().getHeaders().get("authorization", String.class);
