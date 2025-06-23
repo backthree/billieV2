@@ -12,6 +12,11 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final String[] allowedOriginPatterns = {
+            "http://k12e205.p.ssafy.io",
+            "http://localhost:3000"
+    };
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/topic").setHeartbeatValue(new long[] { 10_000, 10_000 })
@@ -22,16 +27,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-rental")
-                .setAllowedOriginPatterns(
-                        "http://k12e205.p.ssafy.io",
-                        "http://localhost:3000"
-                );
-
+                .setAllowedOriginPatterns(allowedOriginPatterns);
         registry.addEndpoint("/ws-rental")
-                .setAllowedOriginPatterns(
-                        "http://k12e205.p.ssafy.io",
-                        "http://localhost:3000"
-                )
+                .setAllowedOriginPatterns(allowedOriginPatterns)
                 .withSockJS();
     }
 

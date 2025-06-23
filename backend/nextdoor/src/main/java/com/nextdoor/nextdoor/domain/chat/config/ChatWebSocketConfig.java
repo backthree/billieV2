@@ -13,6 +13,11 @@ import org.springframework.web.socket.config.annotation.*;
 @EnableWebSocketMessageBroker
 public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final String[] allowedOriginPatterns = {
+            "http://k12e205.p.ssafy.io",
+            "http://localhost:3000"
+    };
+
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
 //        registry.addEndpoint("/ws-chat")
@@ -20,12 +25,8 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
 //                        "http://k12e205.p.ssafy.io",
 //                        "http://localhost:3000"
 //                );
-        registry
-                .addEndpoint("/ws-chat")                   // 클라이언트가 연결할 엔드포인트
-                .setAllowedOriginPatterns(
-                        "http://k12e205.p.ssafy.io",
-                        "http://localhost:3000"
-                )
+        registry.addEndpoint("/ws-chat")                   // 클라이언트가 연결할 엔드포인트
+                .setAllowedOriginPatterns(allowedOriginPatterns)
                 .withSockJS();             // SockJS fallback 지원
 
     }

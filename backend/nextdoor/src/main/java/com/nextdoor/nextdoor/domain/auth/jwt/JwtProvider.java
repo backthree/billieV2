@@ -25,6 +25,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .signWith(SECRET_KEY)
                 .subject(userPrincipal.getName())
+                .claim("uuid", userPrincipal.getUuid())
                 .issuer(ISSUER)
                 .issuedAt(new Date())
                 .expiration(expiryDate)
@@ -38,6 +39,16 @@ public class JwtProvider {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public String validateAndGetUuid(String token) {
+        return Jwts.parser()
+                .verifyWith((SecretKey) SECRET_KEY)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("uuid")
+                .toString();
     }
 }
 
