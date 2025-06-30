@@ -24,12 +24,4 @@ public class PostLikeCount {
         this.postId = postId;
         this.likeCount = likeCount;
     }
-
-    public void increaseLikeCount() {
-        this.likeCount++;
-    }
-
-    public void decreaseLikeCount() {
-        this.likeCount--;
-    }
 }
