@@ -71,22 +71,20 @@ jobs:
       - name: Copy JAR & deploy.sh to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: |
-            backend/nextdoor/build/libs/*.jar
-            deploy.sh
-          target: "${{ env.REMOTE_DIR }}"
+          host:      ${{ secrets.SSH_HOST }}
+          port:      ${{ secrets.SSH_PORT }}
+          username:  ${{ secrets.SSH_USER }}
+          key:       ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "backend/nextdoor/build/libs/*.jar,deploy.sh"
+          target:    ${{ env.REMOTE_DIR }}
 
       - name: SSH & run deploy.sh
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
+          host:     ${{ secrets.SSH_HOST }}
+          port:     ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
             cd ${{ env.REMOTE_DIR }}
