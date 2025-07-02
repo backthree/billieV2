@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -51,6 +53,15 @@ jobs:
     steps:
       - name: Checkout code (to get deploy.sh)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify files in workspace
+        run: |
+          echo "=== Workspace ==="
+          ls -l .
+          echo "--- build/libs ---"
+          ls -l backend/nextdoor/build/libs
 
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
@@ -62,8 +73,7 @@ jobs:
           echo "===== PING 테스트 ====="
           ping -c 4 ${{ secrets.SSH_HOST }} \
             || echo ">>> PING 응답 없음 (ICMP 차단 혹은 네트워크 불가)"
-
-          echo "===== SSH 포트 연결 테스트 ====="
+          echo "===== SSH 포트 테스트 ====="
           nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} \
             && echo ">>> SSH 포트 열림" \
             || echo ">>> SSH 포트 닫힘 또는 접근 불가"
@@ -71,12 +81,12 @@ jobs:
       - name: Copy JAR & deploy.sh to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host:      ${{ secrets.SSH_HOST }}
-          port:      ${{ secrets.SSH_PORT }}
-          username:  ${{ secrets.SSH_USER }}
-          key:       ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "backend/nextdoor/build/libs/*.jar,deploy.sh"
-          target:    ${{ env.REMOTE_DIR }}
+          host:     ${{ secrets.SSH_HOST }}
+          port:     ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          source:   "backend/nextdoor/build/libs/*.jar,./deploy.sh"
+          target:   "${{ env.REMOTE_DIR }}"
 
       - name: SSH & run deploy.sh
         uses: appleboy/ssh-action@v1.0.3
@@ -89,10 +99,10 @@ jobs:
             set -e
             cd ${{ env.REMOTE_DIR }}
 
-            # 1) Create secret config
+            # create secret config
             mkdir -p config
             echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
 
-            # 2) Run deploy script
+            # execute deploy script
             chmod +x deploy.sh
             ./deploy.sh
