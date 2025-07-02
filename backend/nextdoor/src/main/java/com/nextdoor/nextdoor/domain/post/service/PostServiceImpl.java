@@ -132,10 +132,10 @@ public class PostServiceImpl implements PostService {
 
         post.addLike(memberId);
 
-        PostLikeCount likeCount = postLikeCountRepository.findById(postId)
+        postLikeCountRepository.findById(postId)
                 .orElseGet(() -> new PostLikeCount(postId, 0L));
-        likeCount.increaseLikeCount();
-        postLikeCountRepository.save(likeCount);
+
+        postLikeCountRepository.incrementLikeCount(postId);
 
         return true;
     }
@@ -152,10 +152,10 @@ public class PostServiceImpl implements PostService {
 
         post.removeLike(memberId);
 
-        PostLikeCount likeCount = postLikeCountRepository.findById(postId)
+        postLikeCountRepository.findById(postId)
                 .orElseGet(() -> new PostLikeCount(postId, 0L));
-        likeCount.decreaseLikeCount();
-        postLikeCountRepository.save(likeCount);
+
+        postLikeCountRepository.decrementLikeCount(postId);
 
         return true;
     }
