@@ -24,14 +24,6 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
-
       - name: Grant execute permission for gradlew
         working-directory: backend/nextdoor
         run: chmod +x ./gradlew
@@ -61,19 +53,17 @@ jobs:
         with:
           name: app-jar
 
-      - name: List files before copy
+      - name: Verify files
         run: |
-          echo "Workspace root:"
           ls -la .
-          echo "Built JARs:"
-          ls -la backend/nextdoor/build/libs
+          echo "→ Found JAR(s):" && ls -1 *.jar
+          echo "→ deploy.sh present:" && [ -f deploy.sh ]
 
       - name: Debug network
         run: |
-          echo "===== PING ====="
-          ping -c 4 ${{ secrets.SSH_HOST }} || echo "ICMP blocked or host unreachable"
-          echo "===== SSH PORT ====="
-          nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} && echo "SSH port open" || echo "SSH port closed"
+          ping -c 2 ${{ secrets.SSH_HOST }} || echo "PING failed"
+          nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} \
+            && echo "SSH ok" || echo "SSH failed"
 
       - name: Copy JAR & deploy.sh to server
         uses: appleboy/scp-action@v0.1.7
@@ -82,7 +72,7 @@ jobs:
           port:     ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key:      ${{ secrets.SSH_PRIVATE_KEY }}
-          source:   "deploy.sh,backend/nextdoor/build/libs/*.jar"
+          source:   "*.jar,deploy.sh"
           target:   ${{ env.REMOTE_DIR }}
 
       - name: SSH & run deploy.sh
@@ -95,11 +85,7 @@ jobs:
           script: |
             set -e
             cd ${{ env.REMOTE_DIR }}
-
-            # Create secret config
             mkdir -p config
             echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
-
-            # Execute deploy script
             chmod +x deploy.sh
             ./deploy.sh
