@@ -30,6 +30,10 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
 
+      - name: Grant execute permission for gradlew
+        working-directory: backend/nextdoor
+        run: chmod +x ./gradlew
+
       - name: Build with Gradle
         working-directory: backend/nextdoor
         run: ./gradlew clean bootJar -x test
@@ -56,11 +60,11 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.jar" # 수정된 부분: 아티팩트 다운로드 경로에 맞게 수정
+          source: "*.jar"
           target: "${{ env.REMOTE_DIR }}/app.jar"
 
       - name: Remote deploy (start services & app)
-        uses: appleboy/ssh-action@v1.0.3 # 수정된 부분: 최신 버전으로 변경
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           port: ${{ secrets.SSH_PORT }}
@@ -109,7 +113,7 @@ jobs:
               --network ${{ env.NETWORK }} -p 6379:6379 redis:6.2
 
             echo "Waiting for services to be ready..."
-            sleep 30 # 서비스들이 완전히 시작될 때까지 잠시 대기
+            sleep 30
 
             # 4) Cassandra 초기 스키마 적용
             cat << 'EOF' > schema.cql
@@ -120,7 +124,6 @@ jobs:
             CREATE TABLE IF NOT EXISTS unread_counters (conversation_id uuid, user_id bigint, unread_count counter, PRIMARY KEY ((conversation_id), user_id));
             EOF
             
-            # Cassandra 컨테이너가 준비될 때까지 최대 60초 대기
             timeout=60
             while ! docker exec nextdoor-cassandra cqlsh -e "DESCRIBE KEYSPACES;" > /dev/null 2>&1; do
               timeout=$((timeout-5))
