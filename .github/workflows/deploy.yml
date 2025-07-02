@@ -73,6 +73,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+
+            ES_IMAGE_B64="ZG9ja2VyLmVsYXN0aWMuY28vZWxhc3RpY3NlYXJjaC9lbGFzdGljc2VhcmNoOjguNi4z"
+            CASSANDRA_IMAGE_B64="Y2Fzc2FuZHJhOjQuMA=="
+            RABBITMQ_IMAGE_B64="cmFiYml0bXE6My1tYW5hZ2VtZW50"
+            REDIS_IMAGE_B64="cmVkaXM6Ni4y"
+
             cd ${{ env.REMOTE_DIR }}
 
             # 1) Docker 네트워크 확인/생성
@@ -88,34 +94,34 @@ jobs:
               docker rm -f nextdoor-$svc || true
             done
 
-            # 3-1) Cassandra (cassandra:4.0)
+            # Cassandra (실행 시점에 Base64 디코딩)
             docker run -d --name nextdoor-cassandra \
               --network ${{ env.NETWORK }} \
               -p 9042:9042 \
-              cassandra:4.0
+              $(echo "$CASSANDRA_IMAGE_B64" | base64 -d)
 
-            # 3-2) Elasticsearch (docker.elastic.co/elasticsearch/elasticsearch:8.6.3)
+            # Elasticsearch (실행 시점에 Base64 디코딩)
             docker run -d --name nextdoor-elasticsearch \
               --network ${{ env.NETWORK }} \
               -e discovery.type=single-node \
               -e xpack.security.enabled=false \
               --ulimit memlock=-1:-1 --memory=1g \
               -p 9200:9200 \
-              docker.elastic.co/elasticsearch/elasticsearch:8.6.3
+              $(echo "$ES_IMAGE_B64" | base64 -d)
 
-            # 3-3) RabbitMQ (rabbitmq:3-management)
+            # RabbitMQ (실행 시점에 Base64 디코딩)
             docker run -d --name nextdoor-rabbitmq \
               --network ${{ env.NETWORK }} \
               -e RABBITMQ_DEFAULT_USER=guest \
               -e RABBITMQ_DEFAULT_PASS=guest \
               -p 5672:5672 -p 15672:15672 \
-              rabbitmq:3-management
+              $(echo "$RABBITMQ_IMAGE_B64" | base64 -d)
 
-            # 3-4) Redis (redis:6.2)
+            # Redis (실행 시점에 Base64 디코딩)
             docker run -d --name nextdoor-redis \
               --network ${{ env.NETWORK }} \
               -p 6379:6379 \
-              redis:6.2
+              $(echo "$REDIS_IMAGE_B64" | base64 -d)
 
             echo "Waiting for services to be ready..."
             sleep 30
@@ -151,7 +157,11 @@ jobs:
             while ! docker exec nextdoor-cassandra cqlsh -e "DESCRIBE KEYSPACES;" \
                   >/dev/null 2>&1; do
               timeout=$((timeout-5))
-              [ $timeout -le 0 ] && { echo "Cassandra did not start in time."; exit 1; }
+              if [ $timeout -le 0 ]; then
+                echo "Cassandra did not start in time."
+                exit 1
+              fi
+              echo "Waiting for Cassandra..."
               sleep 5
             done
             docker exec -i nextdoor-cassandra cqlsh < schema.cql
