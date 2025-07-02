@@ -60,7 +60,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.jar" # JAR 파일만 복사하도록 수정
+          source: "*.jar"
           target: "${{ env.REMOTE_DIR }}/"
 
       - name: Create secret and execute remote script
@@ -81,6 +81,21 @@ jobs:
             # 2. 외부 Gist에서 최신 스크립트 다운로드
             curl -sL "https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/5bc4837a30931ce3d385f81c26384f10c058ebb3/deploy.sh" -o deploy.sh
 
-            # 3. 실행 권한 부여 및 실행
+            # 3. 실행 권한 부여
             chmod +x deploy.sh
-            ./deploy.sh
+            
+            # 4. 배포 스크립트를 실행하고, 모든 출력을 deploy_log.txt에 저장
+            #    스크립트가 중간에 실패해도 로그를 확인하기 위해 || true 를 추가
+            ./deploy.sh > deploy_log.txt 2>&1 || true
+            
+            # 5. 서버에 기록된 진짜 로그를 출력
+            echo "--- RAW SERVER LOG START ---"
+            cat deploy_log.txt
+            echo "--- RAW SERVER LOG END ---"
+
+            # 6. 배포 스크립트가 성공적으로 끝났는지 수동으로 확인
+            #    deploy_log.txt 마지막 줄에 "Deployed at"이 있는지 확인
+            if ! grep -q "Deployed at" deploy_log.txt; then
+              echo "Deployment script failed. Check the raw log above."
+              exit 1
+            fi
