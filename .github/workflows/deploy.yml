@@ -3,7 +3,7 @@ name: CI & Deploy
 on:
   push:
     branches:
-      - perf/k6-load-test
+      - perf/post-load-tests
 
 env:
   REMOTE_DIR: ${{ secrets.REMOTE_APP_DIR }}
