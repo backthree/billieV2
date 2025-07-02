@@ -79,7 +79,7 @@ jobs:
             echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
             
             # 2. 외부 Gist에서 최신 스크립트 다운로드
-            curl -sL "https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/5bc4837a30931ce3d385f81c26384f10c058ebb3/deploy.sh" -o deploy.sh
+            curl -sL "https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/61d93f69be8605f0b0ec49eb9d10ed3a4a83724e/deploy.sh" -o deploy.sh
 
             # 3. 실행 권한 부여
             chmod +x deploy.sh
