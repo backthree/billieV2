@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code # deploy.sh 파일을 가져오기 위해 필요
+      - name: Checkout code (to get deploy.sh)
         uses: actions/checkout@v4
 
       - name: Download JAR artifact
@@ -57,17 +57,26 @@ jobs:
         with:
           name: app-jar
 
-      - name: Copy JAR and script to server
+      - name: Debug network
+        run: |
+          echo "Pinging ${{ secrets.SSH_HOST }}..."
+          ping -c 4 ${{ secrets.SSH_HOST }}
+          echo "Probing port ${{ secrets.SSH_PORT }} with nc..."
+          nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || true
+
+      - name: Copy JAR & deploy.sh to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.jar, deploy.sh" # JAR 파일과 deploy.sh 스크립트를 함께 복사
+          source: |
+            backend/nextdoor/build/libs/*.jar
+            deploy.sh
           target: "${{ env.REMOTE_DIR }}"
 
-      - name: Create secret and execute script
+      - name: SSH & run deploy.sh
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -78,12 +87,10 @@ jobs:
             set -e
             cd ${{ env.REMOTE_DIR }}
 
-            # 1. 비밀 설정 파일 생성 (이 부분만 yml에 남김)
+            # 1) Create secret config
             mkdir -p config
             echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
-            
-            # 2. 복사된 스크립트에 실행 권한 부여
-            chmod +x deploy.sh
 
-            # 3. 배포 스크립트 실행
+            # 2) Run deploy script
+            chmod +x deploy.sh
             ./deploy.sh
