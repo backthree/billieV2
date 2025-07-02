@@ -59,10 +59,14 @@ jobs:
 
       - name: Debug network
         run: |
-          echo "Pinging ${{ secrets.SSH_HOST }}..."
-          ping -c 4 ${{ secrets.SSH_HOST }}
-          echo "Probing port ${{ secrets.SSH_PORT }} with nc..."
-          nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || true
+          echo "===== PING 테스트 ====="
+          ping -c 4 ${{ secrets.SSH_HOST }} \
+            || echo ">>> PING 응답 없음 (ICMP 차단 혹은 네트워크 불가)"
+
+          echo "===== SSH 포트 연결 테스트 ====="
+          nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} \
+            && echo ">>> SSH 포트 열림" \
+            || echo ">>> SSH 포트 닫힘 또는 접근 불가"
 
       - name: Copy JAR & deploy.sh to server
         uses: appleboy/scp-action@v0.1.7
