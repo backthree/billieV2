@@ -15,14 +15,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
 
       - name: Grant execute permission for gradlew
         working-directory: backend/nextdoor
@@ -41,51 +47,40 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code (to get deploy.sh)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
           name: app-jar
 
-      - name: Verify files
-        run: |
-          ls -la .
-          echo "→ Found JAR(s):" && ls -1 *.jar
-          echo "→ deploy.sh present:" && [ -f deploy.sh ]
-
-      - name: Debug network
-        run: |
-          ping -c 2 ${{ secrets.SSH_HOST }} || echo "PING failed"
-          nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} \
-            && echo "SSH ok" || echo "SSH failed"
-
-      - name: Copy JAR & deploy.sh to server
+      - name: Copy JAR to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host:     ${{ secrets.SSH_HOST }}
-          port:     ${{ secrets.SSH_PORT }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
-          key:      ${{ secrets.SSH_PRIVATE_KEY }}
-          source:   "*.jar,deploy.sh"
-          target:   ${{ env.REMOTE_DIR }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "*.jar" # JAR 파일만 복사하도록 수정
+          target: "${{ env.REMOTE_DIR }}/"
 
-      - name: SSH & run deploy.sh
+      - name: Create secret and execute remote script
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host:     ${{ secrets.SSH_HOST }}
-          port:     ${{ secrets.SSH_PORT }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
-          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
             cd ${{ env.REMOTE_DIR }}
+
+            # 1. 비밀 설정 파일 생성
             mkdir -p config
             echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
+            
+            # 2. 외부 Gist에서 최신 스크립트 다운로드
+            curl -sL "https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/5bc4837a30931ce3d385f81c26384f10c058ebb3/deploy.sh" -o deploy.sh
+
+            # 3. 실행 권한 부여 및 실행
             chmod +x deploy.sh
             ./deploy.sh
