@@ -78,6 +78,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+
+            ES_IMAGE="${{ env.ES_IMAGE }}"
+            CASSANDRA_IMAGE="${{ env.CASSANDRA_IMAGE }}"
+            RABBITMQ_IMAGE="${{ env.RABBITMQ_IMAGE }}"
+            REDIS_IMAGE="${{ env.REDIS_IMAGE }}"
+
             cd ${{ env.REMOTE_DIR }}
 
             # 1) Docker 네트워크 확인/생성
