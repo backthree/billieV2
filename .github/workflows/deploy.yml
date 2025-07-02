@@ -36,7 +36,7 @@ jobs:
 
       - name: Build with Gradle
         working-directory: backend/nextdoor
-        run: ./gradlew clean bootJar -x test
+        run: ./gradlew clean bootJar -x test --no-daemon
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
@@ -94,8 +94,8 @@ jobs:
             echo "--- RAW SERVER LOG END ---"
 
             # 6. 배포 스크립트가 성공적으로 끝났는지 수동으로 확인
-            #    deploy_log.txt 마지막 줄에 "Deployed at"이 있는지 확인
-            if ! grep -q "Deployed at" deploy_log.txt; then
+            #    deploy_log.txt 마지막 줄에 "Deployed at" 또는 "successful"이 있는지 확인
+            if ! grep -q "successful" deploy_log.txt; then
               echo "Deployment script failed. Check the raw log above."
               exit 1
             fi
