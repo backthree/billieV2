@@ -61,23 +61,19 @@ jobs:
         with:
           name: app-jar
 
-      - name: Verify files
+      - name: List files before copy
         run: |
-          echo "=== workspace root ==="
-          ls -1 .
-          echo "=== JAR(s) ==="
-          ls -1 *.jar
-          echo "=== deploy.sh ==="
-          [ -f deploy.sh ] && echo "✓ deploy.sh present" || (echo "✗ deploy.sh missing" && exit 1)
+          echo "Workspace root:"
+          ls -la .
+          echo "Built JARs:"
+          ls -la backend/nextdoor/build/libs
 
       - name: Debug network
         run: |
           echo "===== PING ====="
           ping -c 4 ${{ secrets.SSH_HOST }} || echo "ICMP blocked or host unreachable"
           echo "===== SSH PORT ====="
-          nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} \
-            && echo "SSH port open" \
-            || echo "SSH port closed"
+          nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} && echo "SSH port open" || echo "SSH port closed"
 
       - name: Copy JAR & deploy.sh to server
         uses: appleboy/scp-action@v0.1.7
@@ -86,8 +82,8 @@ jobs:
           port:     ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key:      ${{ secrets.SSH_PRIVATE_KEY }}
-          source:   "backend/nextdoor/build/libs/*.jar,deploy.sh"
-          target:   "${{ env.REMOTE_DIR }}"
+          source:   "deploy.sh,backend/nextdoor/build/libs/*.jar"
+          target:   ${{ env.REMOTE_DIR }}
 
       - name: SSH & run deploy.sh
         uses: appleboy/ssh-action@v1.0.3
@@ -100,10 +96,10 @@ jobs:
             set -e
             cd ${{ env.REMOTE_DIR }}
 
-            # 1) Secret config 생성
+            # Create secret config
             mkdir -p config
             echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
 
-            # 2) 배포 스크립트 실행
+            # Execute deploy script
             chmod +x deploy.sh
             ./deploy.sh
