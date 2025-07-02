@@ -1,0 +1,146 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches:
+      - perf/k6-load-test
+
+env:
+  REMOTE_DIR: ${{ secrets.REMOTE_APP_DIR }}
+  NETWORK: nextdoor-net
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
+
+      - name: Build with Gradle
+        run: ./gradlew clean bootJar -x test
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: backend/nextdoor/build/libs/*.jar
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+
+      - name: Copy JAR to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "*.jar" # 수정된 부분: 아티팩트 다운로드 경로에 맞게 수정
+          target: "${{ env.REMOTE_DIR }}/app.jar"
+
+      - name: Remote deploy (start services & app)
+        uses: appleboy/ssh-action@v1.0.3 # 수정된 부분: 최신 버전으로 변경
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ env.REMOTE_DIR }}
+
+            # 1) 네트워크 확인/생성
+            docker network inspect ${{ env.NETWORK }} >/dev/null 2>&1 || docker network create ${{ env.NETWORK }}
+
+            # 2) application-secret.yaml 생성
+            mkdir -p config
+            echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
+
+            # 3) 의존 서비스 재시작
+            for svc in cassandra elasticsearch rabbitmq redis; do
+              cname=nextdoor-$svc
+              docker rm -f $cname || true
+            done
+
+            # Cassandra
+            docker run -d --name nextdoor-cassandra \
+              --network ${{ env.NETWORK }} -p 9042:9042 cassandra:4.0
+
+            # Elasticsearch
+            docker run -d --name nextdoor-elasticsearch \
+              --network ${{ env.NETWORK }} \
+              -e discovery.type=single-node \
+              -e xpack.security.enabled=false \
+              --ulimit memlock=-1:-1 --memory=1g \
+              -p 9200:9200 \
+              docker.elastic.co/elasticsearch/elasticsearch:8.6.3
+
+            # RabbitMQ
+            docker run -d --name nextdoor-rabbitmq \
+              --network ${{ env.NETWORK }} \
+              -e RABBITMQ_DEFAULT_USER=guest \
+              -e RABBITMQ_DEFAULT_PASS=guest \
+              -p 5672:5672 -p 15672:15672 \
+              rabbitmq:3-management
+
+            # Redis
+            docker run -d --name nextdoor-redis \
+              --network ${{ env.NETWORK }} -p 6379:6379 redis:6.2
+
+            echo "Waiting for services to be ready..."
+            sleep 30 # 서비스들이 완전히 시작될 때까지 잠시 대기
+
+            # 4) Cassandra 초기 스키마 적용
+            cat << 'EOF' > schema.cql
+            CREATE KEYSPACE IF NOT EXISTS nextdoor_chat WITH replication = {'class':'SimpleStrategy','replication_factor':1};
+            USE nextdoor_chat;
+            CREATE TABLE IF NOT EXISTS conversation (conversation_id uuid PRIMARY KEY, participant_ids list<bigint>, created_at timestamp);
+            CREATE TABLE IF NOT EXISTS chat_messages (conversation_id uuid, sent_at timestamp, message_id uuid, sender_id bigint, content text, is_read boolean, PRIMARY KEY ((conversation_id), sent_at, message_id)) WITH CLUSTERING ORDER BY (sent_at DESC);
+            CREATE TABLE IF NOT EXISTS unread_counters (conversation_id uuid, user_id bigint, unread_count counter, PRIMARY KEY ((conversation_id), user_id));
+            EOF
+            
+            # Cassandra 컨테이너가 준비될 때까지 최대 60초 대기
+            timeout=60
+            while ! docker exec nextdoor-cassandra cqlsh -e "DESCRIBE KEYSPACES;" > /dev/null 2>&1; do
+              timeout=$((timeout-5))
+              if [ $timeout -le 0 ]; then
+                echo "Cassandra did not start in time."
+                exit 1
+              fi
+              echo "Waiting for Cassandra..."
+              sleep 5
+            done
+            docker exec -i nextdoor-cassandra cqlsh < schema.cql
+            rm schema.cql
+
+            # 5) 기존 애플리케이션 종료
+            pkill -f 'java.*app.jar' || true
+
+            # 6) 새 애플리케이션 기동
+            nohup java -jar \
+              -Dspring.profiles.active=prod,secret \
+              -Dspring.config.additional-location=./config/ \
+              app.jar \
+              > app.log 2>&1 &
+
+            echo "Deployed at $(date)"
