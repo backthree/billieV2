@@ -72,6 +72,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+
+            ES_IMAGE="docker.elastic.co/elasticsearch/elasticsearch:8.6.3"
+            CASSANDRA_IMAGE="cassandra:4.0"
+            RABBITMQ_IMAGE="rabbitmq:3-management"
+            REDIS_IMAGE="redis:6.2"
+
             cd ${{ env.REMOTE_DIR }}
 
             # 1) 네트워크 확인/생성
@@ -89,7 +95,7 @@ jobs:
 
             # Cassandra
             docker run -d --name nextdoor-cassandra \
-              --network ${{ env.NETWORK }} -p 9042:9042 cassandra:4.0
+              --network ${{ env.NETWORK }} -p 9042:9042 $CASSANDRA_IMAGE
 
             # Elasticsearch
             docker run -d --name nextdoor-elasticsearch \
@@ -98,7 +104,7 @@ jobs:
               -e xpack.security.enabled=false \
               --ulimit memlock=-1:-1 --memory=1g \
               -p 9200:9200 \
-              docker.elastic.co/elasticsearch/elasticsearch:8.6.3
+              $ES_IMAGE
 
             # RabbitMQ
             docker run -d --name nextdoor-rabbitmq \
@@ -106,11 +112,11 @@ jobs:
               -e RABBITMQ_DEFAULT_USER=guest \
               -e RABBITMQ_DEFAULT_PASS=guest \
               -p 5672:5672 -p 15672:15672 \
-              rabbitmq:3-management
+              $RABBITMQ_IMAGE
 
             # Redis
             docker run -d --name nextdoor-redis \
-              --network ${{ env.NETWORK }} -p 6379:6379 redis:6.2
+              --network ${{ env.NETWORK }} -p 6379:6379 $REDIS_IMAGE
 
             echo "Waiting for services to be ready..."
             sleep 30
