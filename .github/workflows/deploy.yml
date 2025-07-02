@@ -31,6 +31,7 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
 
       - name: Build with Gradle
+        working-directory: backend/nextdoor
         run: ./gradlew clean bootJar -x test
 
       - name: Upload JAR artifact
