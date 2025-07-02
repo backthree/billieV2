@@ -56,27 +56,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify files in workspace
-        run: |
-          echo "=== Workspace ==="
-          ls -l .
-          echo "--- build/libs ---"
-          ls -l backend/nextdoor/build/libs
-
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
           name: app-jar
 
+      - name: Verify files
+        run: |
+          echo "=== workspace root ==="
+          ls -1 .
+          echo "=== JAR(s) ==="
+          ls -1 *.jar
+          echo "=== deploy.sh ==="
+          [ -f deploy.sh ] && echo "✓ deploy.sh present" || (echo "✗ deploy.sh missing" && exit 1)
+
       - name: Debug network
         run: |
-          echo "===== PING 테스트 ====="
-          ping -c 4 ${{ secrets.SSH_HOST }} \
-            || echo ">>> PING 응답 없음 (ICMP 차단 혹은 네트워크 불가)"
-          echo "===== SSH 포트 테스트 ====="
+          echo "===== PING ====="
+          ping -c 4 ${{ secrets.SSH_HOST }} || echo "ICMP blocked or host unreachable"
+          echo "===== SSH PORT ====="
           nc -zv ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} \
-            && echo ">>> SSH 포트 열림" \
-            || echo ">>> SSH 포트 닫힘 또는 접근 불가"
+            && echo "SSH port open" \
+            || echo "SSH port closed"
 
       - name: Copy JAR & deploy.sh to server
         uses: appleboy/scp-action@v0.1.7
@@ -85,7 +86,7 @@ jobs:
           port:     ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key:      ${{ secrets.SSH_PRIVATE_KEY }}
-          source:   "backend/nextdoor/build/libs/*.jar,./deploy.sh"
+          source:   "backend/nextdoor/build/libs/*.jar,deploy.sh"
           target:   "${{ env.REMOTE_DIR }}"
 
       - name: SSH & run deploy.sh
@@ -99,10 +100,10 @@ jobs:
             set -e
             cd ${{ env.REMOTE_DIR }}
 
-            # create secret config
+            # 1) Secret config 생성
             mkdir -p config
             echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
 
-            # execute deploy script
+            # 2) 배포 스크립트 실행
             chmod +x deploy.sh
             ./deploy.sh
