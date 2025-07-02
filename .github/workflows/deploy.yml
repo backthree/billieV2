@@ -49,22 +49,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code # deploy.sh 파일을 가져오기 위해 필요
+        uses: actions/checkout@v4
+
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
           name: app-jar
 
-      - name: Copy JAR to server
+      - name: Copy JAR and script to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.jar"
-          target: "${{ env.REMOTE_DIR }}/app.jar"
+          source: "*.jar, deploy.sh" # JAR 파일과 deploy.sh 스크립트를 함께 복사
+          target: "${{ env.REMOTE_DIR }}"
 
-      - name: Remote deploy (start services & app)
+      - name: Create secret and execute script
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -73,107 +76,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-
-            ES_IMAGE_B64="ZG9ja2VyLmVsYXN0aWMuY28vZWxhc3RpY3NlYXJjaC9lbGFzdGljc2VhcmNoOjguNi4z"
-            CASSANDRA_IMAGE_B64="Y2Fzc2FuZHJhOjQuMA=="
-            RABBITMQ_IMAGE_B64="cmFiYml0bXE6My1tYW5hZ2VtZW50"
-            REDIS_IMAGE_B64="cmVkaXM6Ni4y"
-
             cd ${{ env.REMOTE_DIR }}
 
-            # 1) Docker 네트워크 확인/생성
-            docker network inspect ${{ env.NETWORK }} >/dev/null 2>&1 \
-              || docker network create ${{ env.NETWORK }}
-
-            # 2) application-secret.yaml 생성
+            # 1. 비밀 설정 파일 생성 (이 부분만 yml에 남김)
             mkdir -p config
             echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
+            
+            # 2. 복사된 스크립트에 실행 권한 부여
+            chmod +x deploy.sh
 
-            # 3) 의존 서비스 컨테이너 재시작
-            for svc in cassandra elasticsearch rabbitmq redis; do
-              docker rm -f nextdoor-$svc || true
-            done
-
-            # Cassandra (실행 시점에 Base64 디코딩)
-            docker run -d --name nextdoor-cassandra \
-              --network ${{ env.NETWORK }} \
-              -p 9042:9042 \
-              $(echo "$CASSANDRA_IMAGE_B64" | base64 -d)
-
-            # Elasticsearch (실행 시점에 Base64 디코딩)
-            docker run -d --name nextdoor-elasticsearch \
-              --network ${{ env.NETWORK }} \
-              -e discovery.type=single-node \
-              -e xpack.security.enabled=false \
-              --ulimit memlock=-1:-1 --memory=1g \
-              -p 9200:9200 \
-              $(echo "$ES_IMAGE_B64" | base64 -d)
-
-            # RabbitMQ (실행 시점에 Base64 디코딩)
-            docker run -d --name nextdoor-rabbitmq \
-              --network ${{ env.NETWORK }} \
-              -e RABBITMQ_DEFAULT_USER=guest \
-              -e RABBITMQ_DEFAULT_PASS=guest \
-              -p 5672:5672 -p 15672:15672 \
-              $(echo "$RABBITMQ_IMAGE_B64" | base64 -d)
-
-            # Redis (실행 시점에 Base64 디코딩)
-            docker run -d --name nextdoor-redis \
-              --network ${{ env.NETWORK }} \
-              -p 6379:6379 \
-              $(echo "$REDIS_IMAGE_B64" | base64 -d)
-
-            echo "Waiting for services to be ready..."
-            sleep 30
-
-            # 4) Cassandra 초기 스키마 적용
-            cat << 'EOF' > schema.cql
-            CREATE KEYSPACE IF NOT EXISTS nextdoor_chat
-              WITH replication = {'class':'SimpleStrategy','replication_factor':1};
-            USE nextdoor_chat;
-            CREATE TABLE IF NOT EXISTS conversation (
-              conversation_id uuid PRIMARY KEY,
-              participant_ids list<bigint>,
-              created_at timestamp
-            );
-            CREATE TABLE IF NOT EXISTS chat_messages (
-              conversation_id uuid,
-              sent_at timestamp,
-              message_id uuid,
-              sender_id bigint,
-              content text,
-              is_read boolean,
-              PRIMARY KEY ((conversation_id), sent_at, message_id)
-            ) WITH CLUSTERING ORDER BY (sent_at DESC);
-            CREATE TABLE IF NOT EXISTS unread_counters (
-              conversation_id uuid,
-              user_id bigint,
-              unread_count counter,
-              PRIMARY KEY ((conversation_id), user_id)
-            );
-            EOF
-
-            timeout=60
-            while ! docker exec nextdoor-cassandra cqlsh -e "DESCRIBE KEYSPACES;" \
-                  >/dev/null 2>&1; do
-              timeout=$((timeout-5))
-              if [ $timeout -le 0 ]; then
-                echo "Cassandra did not start in time."
-                exit 1
-              fi
-              echo "Waiting for Cassandra..."
-              sleep 5
-            done
-            docker exec -i nextdoor-cassandra cqlsh < schema.cql
-            rm schema.cql
-
-            # 5) 기존 애플리케이션 종료
-            pkill -f 'java.*app.jar' || true
-
-            # 6) 새 애플리케이션 기동
-            nohup java -jar \
-              -Dspring.profiles.active=prod,secret \
-              -Dspring.config.additional-location=./config/ \
-              app.jar > app.log 2>&1 &
-
-            echo "Deployed at $(date)"
+            # 3. 배포 스크립트 실행
+            ./deploy.sh
