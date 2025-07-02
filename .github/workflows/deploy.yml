@@ -47,11 +47,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    env:
-      ES_IMAGE: docker.elastic.co/elasticsearch/elasticsearch:8.6.3
-      CASSANDRA_IMAGE: cassandra:4.0
-      RABBITMQ_IMAGE: rabbitmq:3-management
-      REDIS_IMAGE: redis:6.2
 
     steps:
       - name: Download JAR artifact
@@ -78,12 +73,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-
-            ES_IMAGE="${{ env.ES_IMAGE }}"
-            CASSANDRA_IMAGE="${{ env.CASSANDRA_IMAGE }}"
-            RABBITMQ_IMAGE="${{ env.RABBITMQ_IMAGE }}"
-            REDIS_IMAGE="${{ env.REDIS_IMAGE }}"
-
             cd ${{ env.REMOTE_DIR }}
 
             # 1) Docker 네트워크 확인/생성
@@ -99,28 +88,34 @@ jobs:
               docker rm -f nextdoor-$svc || true
             done
 
-            # 3-1) Cassandra
+            # 3-1) Cassandra (cassandra:4.0)
             docker run -d --name nextdoor-cassandra \
-              --network ${{ env.NETWORK }} -p 9042:9042 $CASSANDRA_IMAGE
+              --network ${{ env.NETWORK }} \
+              -p 9042:9042 \
+              cassandra:4.0
 
-            # 3-2) Elasticsearch
+            # 3-2) Elasticsearch (docker.elastic.co/elasticsearch/elasticsearch:8.6.3)
             docker run -d --name nextdoor-elasticsearch \
               --network ${{ env.NETWORK }} \
               -e discovery.type=single-node \
               -e xpack.security.enabled=false \
               --ulimit memlock=-1:-1 --memory=1g \
-              -p 9200:9200 $ES_IMAGE
+              -p 9200:9200 \
+              docker.elastic.co/elasticsearch/elasticsearch:8.6.3
 
-            # 3-3) RabbitMQ
+            # 3-3) RabbitMQ (rabbitmq:3-management)
             docker run -d --name nextdoor-rabbitmq \
               --network ${{ env.NETWORK }} \
               -e RABBITMQ_DEFAULT_USER=guest \
               -e RABBITMQ_DEFAULT_PASS=guest \
-              -p 5672:5672 -p 15672:15672 $RABBITMQ_IMAGE
+              -p 5672:5672 -p 15672:15672 \
+              rabbitmq:3-management
 
-            # 3-4) Redis
+            # 3-4) Redis (redis:6.2)
             docker run -d --name nextdoor-redis \
-              --network ${{ env.NETWORK }} -p 6379:6379 $REDIS_IMAGE
+              --network ${{ env.NETWORK }} \
+              -p 6379:6379 \
+              redis:6.2
 
             echo "Waiting for services to be ready..."
             sleep 30
