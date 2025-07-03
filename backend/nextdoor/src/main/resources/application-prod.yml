@@ -36,8 +36,8 @@ spring:
       host: nextdoor-redis
       port: 6379
 
-    elasticsearch:
-      uris: http://nextdoor-elasticsearch:9200
+  elasticsearch:
+    uris: http://nextdoor-elasticsearch:9200
 
 server:
   port: 8081
