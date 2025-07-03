@@ -60,7 +60,7 @@ jobs:
             cd ${{ env.REMOTE_DIR }}
 
             # 외부 Gist에서 최신 배포 스크립트 다운로드
-            curl -sL "https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/209fe261a71ebb079ccfd7761cd14ffa931b9777/deploy.sh" -o deploy.sh
+            curl -sL "https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/c6892734a606a46e22ac90d8a5a95775a21a9710/deploy.sh" -o deploy.sh
 
             # 실행 권한 부여
             chmod +x deploy.sh
