@@ -8,9 +8,10 @@ on:
 env:
   REMOTE_DIR: ${{ secrets.REMOTE_APP_DIR }}
   NETWORK: nextdoor-net
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/nextdoor-app
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -19,16 +20,8 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
+          distribution: 'temurin'
+          java-version: '21'
 
       - name: Grant execute permission for gradlew
         working-directory: backend/nextdoor
@@ -36,34 +29,26 @@ jobs:
 
       - name: Build with Gradle
         working-directory: backend/nextdoor
-        run: ./gradlew clean bootJar -x test --no-daemon
+        run: ./gradlew clean bootJar --no-daemon
 
-      - name: Upload JAR artifact
-        uses: actions/upload-artifact@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          name: app-jar
-          path: backend/nextdoor/build/libs/*.jar
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend/nextdoor # Dockerfile이 있는 위치
+          push: true
+          tags: ${{ env.DOCKER_IMAGE }}:latest
 
   deploy:
-    needs: build
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Download JAR artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app-jar
-
-      - name: Copy JAR to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.jar"
-          target: "${{ env.REMOTE_DIR }}/"
-
-      - name: Create secret and execute remote script
+      - name: Execute remote deployment
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -74,28 +59,11 @@ jobs:
             set -e
             cd ${{ env.REMOTE_DIR }}
 
-            # 1. 비밀 설정 파일 생성
-            mkdir -p config
-            echo "${{ secrets.APPLICATION_SECRET }}" > config/application-secret.yaml
-            
-            # 2. 외부 Gist에서 최신 스크립트 다운로드
+            # 외부 Gist에서 최신 배포 스크립트 다운로드
             curl -sL "https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/61d93f69be8605f0b0ec49eb9d10ed3a4a83724e/deploy.sh" -o deploy.sh
 
-            # 3. 실행 권한 부여
+            # 실행 권한 부여
             chmod +x deploy.sh
             
-            # 4. 배포 스크립트를 실행하고, 모든 출력을 deploy_log.txt에 저장
-            #    스크립트가 중간에 실패해도 로그를 확인하기 위해 || true 를 추가
-            ./deploy.sh > deploy_log.txt 2>&1 || true
-            
-            # 5. 서버에 기록된 진짜 로그를 출력
-            echo "--- RAW SERVER LOG START ---"
-            cat deploy_log.txt
-            echo "--- RAW SERVER LOG END ---"
-
-            # 6. 배포 스크립트가 성공적으로 끝났는지 수동으로 확인
-            #    deploy_log.txt 마지막 줄에 "Deployed at" 또는 "successful"이 있는지 확인
-            if ! grep -q "successful" deploy_log.txt; then
-              echo "Deployment script failed. Check the raw log above."
-              exit 1
-            fi
+            # Docker 이미지 이름과 비밀 설정을 환경변수로 전달하며 실행
+            DOCKER_IMAGE=${{ env.DOCKER_IMAGE }} APPLICATION_SECRET='${{ secrets.APPLICATION_SECRET }}' ./deploy.sh
