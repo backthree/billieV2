@@ -57,6 +57,12 @@ custom:
   product-analyzer-prompt-location: productAnalyzerPrompt.txt
   product-condition-analyzer-prompt-location: productConditionAnalyzerPrompt.txt
 
+  elasticsearch:
+    index:
+      posts:
+        name: posts
+        alias: posts-alias
+
 cloud:
   aws:
     region:
@@ -65,9 +71,3 @@ cloud:
       auto: false
     s3:
       bucket: oneders
-
-elasticsearch:
-  index:
-    posts:
-      name: posts
-      alias: posts-alias
