@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Spring Boot Application
   app:
-    image: ${{ secrets.DOCKERHUB_USERNAME }}/nextdoor-app:latest
+    image: ${DOCKER_IMAGE}:latest
     container_name: nextdoor-app
     ports:
       - "8081:8081"
