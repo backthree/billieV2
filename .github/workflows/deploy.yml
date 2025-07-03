@@ -71,13 +71,27 @@ jobs:
             set -e
             cd ${{ env.REMOTE_DIR }}
 
-            # 1. 비밀 설정 파일 생성
+            # 1. docker-compose (V2) 설치 확인 및 자동 설치
+            if ! docker compose version &> /dev/null; then
+                echo "docker-compose-plugin (for 'docker compose') could not be found, installing it now."
+                sudo apt-get update -y
+                sudo apt-get install -y docker-compose-plugin
+            fi
+
+            # 2. 비밀 설정 파일 생성
             mkdir -p config
             echo '${{ secrets.APPLICATION_SECRET }}' > config/application-secret.yaml
 
-            # 2. Docker Compose 환경변수 설정
+            # 3. Docker Compose가 사용할 환경변수 설정
             export DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
 
-            # 3. 최신 이미지 받고, 모든 서비스 실행
+            # 4. 기존 서비스 중지 및 제거 (수정된 부분)
+            echo "Stopping and removing old containers..."
+            docker compose down --remove-orphans
+
+            # 5. 최신 이미지 받고, 모든 서비스 실행
+            echo "Pulling latest images..."
             docker compose pull
-            docker compose up -d --remove-orphans
+
+            echo "Starting all services..."
+            docker compose up -d
