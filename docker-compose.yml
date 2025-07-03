@@ -9,6 +9,9 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod,secret
       - SPRING_CONFIG_ADDITIONAL-LOCATION=file:/app/config/application-secret.yaml
+      - SPRING_DATA_CASSANDRA_CONTACT_POINTS=nextdoor-cassandra
+      - SPRING_DATA_CASSANDRA_PORT=9042
+      - SPRING_DATA_CASSANDRA_KEYSPACE_NAME=nextdoor_chat
     volumes:
       - ./config:/app/config:ro
     networks:
@@ -75,7 +78,7 @@ services:
         bin/elasticsearch-plugin install analysis-nori --batch &&
         exec /usr/local/bin/docker-entrypoint.sh "$@"
     healthcheck:
-      test: [ "CMD-SHELL", "curl -s --fail http://localhost:9200/_cluster/health?wait_for_status=yellow" ]
+      test: ["CMD-SHELL", "curl -s --fail http://localhost:9200/_cluster/health?wait_for_status=yellow"]
       interval: 20s
       timeout: 10s
       retries: 5
@@ -96,22 +99,22 @@ services:
       - bash
       - -c
       - |
-        # 1) Cassandra 백그라운드 실행
+        # Cassandra 백그라운드 실행
         cassandra -f -R &
 
-        # 2) CQLSH 접속 준비될 때까지 대기
+        # CQLSH 접속 준비될 때까지 대기
         until cqlsh localhost 9042 -e "describe keyspaces" >/dev/null 2>&1; do
           echo "Waiting for Cassandra to be ready..."
           sleep 5
         done
 
-        # 3) init 스크립트 실행
+        # init 스크립트 실행
         bash /docker-entrypoint-initdb.d/init-cassandra.sh
 
-        # 4) 포그라운드 프로세스 유지
+        # 포그라운드 프로세스 유지
         wait
     healthcheck:
-      test: [ "CMD-SHELL", "cqlsh localhost 9042 -e 'describe keyspaces'" ]
+      test: ["CMD-SHELL", "cqlsh localhost 9042 -e 'describe keyspaces'"]
       start_period: 120s
       interval: 30s
       timeout: 10s

@@ -1,17 +1,21 @@
 spring:
   application:
     name: nextdoor
+
   transaction:
     default-timeout: 100
+
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+
   datasource:
     hikari:
       maximum-pool-size: 10
       idle-timeout: 600000
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -23,10 +27,13 @@ spring:
 
   data:
     cassandra:
-      contact-points: nextdoor-cassandra:9042
+      contact-points:
+        - nextdoor-cassandra
+      port: 9042
       keyspace-name: nextdoor_chat
       local-datacenter: datacenter1
-      schema-action: create-if-not-exists
+      schema-action: create_if_not_exists
+
     redis:
       host: nextdoor-redis
       port: 6379
@@ -36,7 +43,7 @@ spring:
     port: 5672
 
   elasticsearch:
-    uris: nextdoor-elasticsearch:9200
+    uris: http://nextdoor-elasticsearch:9200
 
 server:
   port: 8081
