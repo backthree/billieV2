@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Spring Boot Application
   app:
     image: ${DOCKER_IMAGE}:latest
     container_name: nextdoor-app
@@ -64,10 +63,17 @@ services:
         hard: -1
     ports:
       - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
       - nextdoor-net
+    command: >
+      sh -c "
+        bin/elasticsearch-plugin install analysis-nori --batch &&
+        bin/docker-entrypoint.sh
+      "
     healthcheck:
-      test: ["CMD-SHELL", "curl -s --fail http://localhost:9200/_cluster/health?wait_for_status=yellow"]
+      test: [ "CMD-SHELL", "curl -s --fail http://localhost:9200/_cluster/health?wait_for_status=yellow" ]
       interval: 20s
       timeout: 10s
       retries: 5
@@ -127,3 +133,4 @@ volumes:
   cassandra_data:
   rabbitmq_data:
   redis_data:
+  elasticsearch_data:
