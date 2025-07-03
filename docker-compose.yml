@@ -95,24 +95,6 @@ services:
       - ./init-cassandra.sh:/docker-entrypoint-initdb.d/init-cassandra.sh:ro
     networks:
       - nextdoor-net
-    command:
-      - bash
-      - -c
-      - |
-        # Cassandra 백그라운드 실행
-        cassandra -f -R &
-
-        # CQLSH 접속 준비될 때까지 대기
-        until cqlsh localhost 9042 -e "describe keyspaces" >/dev/null 2>&1; do
-          echo "Waiting for Cassandra to be ready..."
-          sleep 5
-        done
-
-        # init 스크립트 실행
-        bash /docker-entrypoint-initdb.d/init-cassandra.sh
-
-        # 포그라운드 프로세스 유지
-        wait
     healthcheck:
       test: ["CMD-SHELL", "cqlsh localhost 9042 -e 'describe keyspaces'"]
       start_period: 120s
