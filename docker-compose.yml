@@ -67,11 +67,13 @@ services:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
       - nextdoor-net
-    command: >
-      sh -c "
+    command:
+      - sh
+      - -c
+      - |
+        echo "Installing analysis-nori plugin…" &&
         bin/elasticsearch-plugin install analysis-nori --batch &&
-        bin/docker-entrypoint.sh
-      "
+        exec /usr/local/bin/docker-entrypoint.sh "$@"
     healthcheck:
       test: [ "CMD-SHELL", "curl -s --fail http://localhost:9200/_cluster/health?wait_for_status=yellow" ]
       interval: 20s
