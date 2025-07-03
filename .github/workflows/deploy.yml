@@ -1,4 +1,4 @@
-name: CI & Deploy
+name: CI & Deploy with Docker Compose
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
 
 env:
   REMOTE_DIR: ${{ secrets.REMOTE_APP_DIR }}
-  NETWORK: nextdoor-net
   DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/nextdoor-app
 
 jobs:
@@ -20,8 +19,8 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 21
+          distribution: 'temurin'
+          java-version: '21'
 
       - name: Grant execute permission for gradlew
         working-directory: backend/nextdoor
@@ -37,10 +36,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & push Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: backend/nextdoor
+          context: ./backend/nextdoor
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:latest
 
@@ -48,21 +47,37 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Execute remote deployment
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy deployment files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml, init-cassandra.sh"
+          target: "${{ env.REMOTE_DIR }}"
+
+      - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host:     ${{ secrets.SSH_HOST }}
-          port:     ${{ secrets.SSH_PORT }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
-          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
             cd ${{ env.REMOTE_DIR }}
 
-            # 최신 배포 스크립트 가져오기
-            curl -sL https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/6accb9976fb99ffac541bd3ec79719229c6bfee5/deploy.sh -o deploy.sh
+            # 1. 비밀 설정 파일 생성
+            mkdir -p config
+            echo '${{ secrets.APPLICATION_SECRET }}' > config/application-secret.yaml
 
-            chmod +x deploy.sh
+            # 2. Docker Compose 환경변수 설정
+            export DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
 
-            # DOCKER_IMAGE 와 APPLICATION_SECRET 을 환경변수로 전달
-            DOCKER_IMAGE=${{ env.DOCKER_IMAGE }} APPLICATION_SECRET='${{ secrets.APPLICATION_SECRET }}' ./deploy.sh
+            # 3. 최신 이미지 받고, 모든 서비스 실행
+            docker-compose pull
+            docker-compose up -d --remove-orphans
