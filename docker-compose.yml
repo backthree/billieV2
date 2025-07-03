@@ -90,6 +90,22 @@ services:
       - ./init-cassandra.sh:/docker-entrypoint-initdb.d/init-cassandra.sh
     networks:
       - nextdoor-net
+    command:
+      - bash
+      - -c
+      - |
+        # Cassandra 데몬 백그라운드로 실행
+        cassandra -f &
+        # CQLSH 접속 가능해질 때까지 대기
+        until cqlsh -e "DESCRIBE KEYSPACES" >/dev/null 2>&1; do
+          echo "Waiting for Cassandra to be ready..."
+          sleep 2
+        done
+        # init-cassandra.sh 스크립트 실행 (내부에 키스페이스 생성 CQL 포함)
+        bash /docker-entrypoint-initdb.d/init-cassandra.sh
+        # 포그라운드 프로세스(=Cassandra) 유지
+        wait
+
     healthcheck:
       test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces'"]
       interval: 20s
