@@ -43,7 +43,7 @@ spring:
     port: 5672
 
   elasticsearch:
-    uris: http://nextdoor-elasticsearch:9200
+    uris: nextdoor-elasticsearch:9200
 
 server:
   port: 8081
