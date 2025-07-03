@@ -20,8 +20,8 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: temurin
+          java-version: 21
 
       - name: Grant execute permission for gradlew
         working-directory: backend/nextdoor
@@ -37,10 +37,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build & push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend/nextdoor # Dockerfile이 있는 위치
+          context: backend/nextdoor
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:latest
 
@@ -51,19 +51,18 @@ jobs:
       - name: Execute remote deployment
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
+          host:     ${{ secrets.SSH_HOST }}
+          port:     ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
             cd ${{ env.REMOTE_DIR }}
 
-            # 외부 Gist에서 최신 배포 스크립트 다운로드
-            curl -sL "https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/c6892734a606a46e22ac90d8a5a95775a21a9710/deploy.sh" -o deploy.sh
+            # 최신 배포 스크립트 가져오기
+            curl -sL https://gist.githubusercontent.com/Choijake/6a13adca9840915a76a29eafecdf00e1/raw/6accb9976fb99ffac541bd3ec79719229c6bfee5/deploy.sh -o deploy.sh
 
-            # 실행 권한 부여
             chmod +x deploy.sh
-            
-            # Docker 이미지 이름과 비밀 설정을 환경변수로 전달하며 실행
+
+            # DOCKER_IMAGE 와 APPLICATION_SECRET 을 환경변수로 전달
             DOCKER_IMAGE=${{ env.DOCKER_IMAGE }} APPLICATION_SECRET='${{ secrets.APPLICATION_SECRET }}' ./deploy.sh
