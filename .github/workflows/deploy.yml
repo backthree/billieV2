@@ -1,121 +1,120 @@
-name: CI & Deploy with Docker Compose
+  name: CI & Deploy with Docker Compose
 
-on:
-  push:
-    branches:
-      - perf/post-load-tests
+  on:
+    push:
+      branches:
+        - perf/post-load-tests
 
-env:
-  REMOTE_DIR: ${{ secrets.REMOTE_APP_DIR }}
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/nextdoor-app
+  env:
+    REMOTE_DIR: ${{ secrets.REMOTE_APP_DIR }}
+    DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/nextdoor-app
 
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  jobs:
+    build-and-push:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
+        - name: Set up JDK 21
+          uses: actions/setup-java@v4
+          with:
+            distribution: temurin
+            java-version: '21'
 
-      - name: Grant execute permission for gradlew
-        working-directory: backend/nextdoor
-        run: chmod +x ./gradlew
+        - name: Grant execute permission for gradlew
+          working-directory: backend/nextdoor
+          run: chmod +x ./gradlew
 
-      - name: Build with Gradle
-        working-directory: backend/nextdoor
-        run: ./gradlew clean bootJar --no-daemon
+        - name: Build with Gradle
+          working-directory: backend/nextdoor
+          run: ./gradlew clean bootJar --no-daemon
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        - name: Login to Docker Hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend/nextdoor
-          push: true
-          tags: ${{ env.DOCKER_IMAGE }}:latest
+        - name: Build and push Docker image
+          uses: docker/build-push-action@v5
+          with:
+            context: ./backend/nextdoor
+            push: true
+            tags: ${{ env.DOCKER_IMAGE }}:latest
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
+    deploy:
+      needs: build-and-push
+      runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
 
-      # 1. SSH 키 에이전트에 올리기
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        - name: Setup SSH agent
+          uses: webfactory/ssh-agent@v0.5.3
+          with:
+            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 2. 서버 호스트키를 known_hosts에 추가
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        - name: Add server to known_hosts
+          run: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      # 3. SSH 연결 테스트
-      - name: Test SSH connectivity
-        run: |
-          ssh -o BatchMode=yes -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} echo "SSH OK"
+        - name: Test SSH connectivity
+          run: |
+            ssh -o BatchMode=yes \
+                -o StrictHostKeyChecking=yes \
+                -p ${{ secrets.SSH_PORT }} \
+                ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+                echo "SSH OK"
 
-      # 4. Deployment files 복사 (rsync + 재시도)
-      - name: Copy deployment files to server
-        run: |
-          for i in {1..5}; do
-            echo "Rsync attempt $i..."
-            rsync -av \
-              -e "ssh -p ${{ secrets.SSH_PORT }} -o ConnectTimeout=10" \
-              docker-compose.yml init-cassandra.sh \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ env.REMOTE_DIR }} \
-            && break
-            echo "Rsync failed, retrying in 10s..."
-            sleep 10
-          done
+        - name: Copy deployment files to server
+          run: |
+            for i in {1..5}; do
+              echo "Rsync attempt $i..."
+              rsync -av \
+                -e "ssh -p ${{ secrets.SSH_PORT }} -o ConnectTimeout=10" \
+                docker-compose.yml init-cassandra.sh \
+                ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ env.REMOTE_DIR }} \
+              && break
+              echo "Rsync failed, retrying in 10s..."
+              sleep 10
+            done
 
-      # 5. 원격 서버에서 Docker Compose로 배포
-      - name: Deploy with Docker Compose
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            cd ${{ env.REMOTE_DIR }}
-
-            # docker compose v2 설치 확인
-            if ! docker compose version &> /dev/null; then
-              echo "Installing docker-compose-plugin for 'docker compose'..."
-              sudo apt-get update -y
-              sudo apt-get install -y docker-compose-plugin
-            fi
-
-            # 비밀 설정 파일
-            mkdir -p config
-            echo '${{ secrets.APPLICATION_SECRET }}' > config/application-secret.yaml
-
-            # 이미지 태그 환경변수
-            export DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
-
-            # 기존 서비스 중지 및 잔여 컨테이너 제거
-            echo "Stopping and removing old containers..."
-            docker compose down --remove-orphans
-            docker rm -f nextdoor-cassandra nextdoor-elasticsearch || true
-
-            # 최신 이미지 풀링 및 기동
-            echo "Pulling latest images..."
-            docker compose pull
-
-            echo "Starting all services..."
-            docker compose up -d
+        - name: Deploy with Docker Compose
+          uses: appleboy/ssh-action@v1.0.3
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            port: ${{ secrets.SSH_PORT }}
+            username: ${{ secrets.SSH_USER }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            script: |
+              set -e
+              cd ${{ env.REMOTE_DIR }}
+              
+              # 1. Ensure docker compose v2 is available
+              if ! docker compose version &> /dev/null; then
+                echo "Installing docker-compose-plugin..."
+                sudo apt-get update -y
+                sudo apt-get install -y docker-compose-plugin
+              fi
+              
+              # 2. Create config directory and secret file
+              mkdir -p config
+              echo '${{ secrets.APPLICATION_SECRET }}' > config/application-secret.yaml
+              
+              # 3. Export image tag
+              export DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
+              
+              # 4. Stop and remove old containers
+              echo "Stopping and removing old containers..."
+              docker compose down --remove-orphans
+              docker rm -f nextdoor-cassandra nextdoor-elasticsearch || true
+              
+              # 5. Pull latest images and start services
+              echo "Pulling latest images..."
+              docker compose pull
+              
+              echo "Starting all services..."
+              docker compose up -d
