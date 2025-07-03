@@ -79,5 +79,5 @@ jobs:
             export DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
 
             # 3. 최신 이미지 받고, 모든 서비스 실행
-            docker-compose pull
-            docker-compose up -d --remove-orphans
+            docker compose pull
+            docker compose up -d --remove-orphans
