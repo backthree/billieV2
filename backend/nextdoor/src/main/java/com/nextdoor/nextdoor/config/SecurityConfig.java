@@ -1,10 +1,11 @@
 package com.nextdoor.nextdoor.config;
 
-import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2AuthorizationRequestBasedOnCookieRepository;
-import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2SuccessHandler;
 import com.nextdoor.nextdoor.domain.auth.filter.JwtAuthenticationFilter;
 import com.nextdoor.nextdoor.domain.auth.filter.RedirectUrlCookieFilter;
+import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2AuthorizationRequestBasedOnCookieRepository;
+import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -25,7 +26,6 @@ public class SecurityConfig {
 
     private final OAuth2AuthorizationRequestBasedOnCookieRepository oAuth2AuthorizationRequestBasedOnCookieRepository;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RedirectUrlCookieFilter redirectUrlCookieFilter;
 
@@ -36,41 +36,36 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
+        http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(httpRequest -> httpRequest
-                        .requestMatchers("/actuator/prometheus").permitAll()
-                        .requestMatchers(
-                                "/api/v1/auth"
-                        )
-                        .permitAll()
-                        .requestMatchers(
-                                HttpMethod.GET,
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(EndpointRequest.to("prometheus")).permitAll()
+                        .requestMatchers("/api/v1/auth").permitAll()
+                        .requestMatchers(HttpMethod.GET,
                                 "/api/v1/posts",
                                 "/api/v1/posts/generate-tokens"
-                        )
-                        .permitAll()
+                        ).permitAll()
                         .requestMatchers(
                                 "/api/v1/posts/{postId}/like",
                                 "/api/v1/posts/liked"
-                        )
-                        .authenticated()
-                        .anyRequest()
-                        .authenticated())
+                        ).authenticated()
+                        .anyRequest().authenticated()
+                )
                 .oauth2Login(oauth2 -> oauth2
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/api/v1/auth/oauth2/code/*"))
-                        .authorizationEndpoint(authorization -> authorization
+                        .redirectionEndpoint(redir -> redir.baseUri("/api/v1/auth/oauth2/code/*"))
+                        .authorizationEndpoint(authz -> authz
                                 .baseUri("/api/v1/auth/oauth2/authorization")
-                                .authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository))
-                        .successHandler(oAuth2SuccessHandler))
+                                .authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository)
+                        )
+                        .successHandler(oAuth2SuccessHandler)
+                )
                 .oauth2Client(Customizer.withDefaults())
                 .addFilterAfter(jwtAuthenticationFilter, CorsFilter.class)
-                .addFilterBefore(redirectUrlCookieFilter, OAuth2AuthorizationRequestRedirectFilter.class)
-                .build();
+                .addFilterBefore(redirectUrlCookieFilter, OAuth2AuthorizationRequestRedirectFilter.class);
+
+        return http.build();
     }
 }
