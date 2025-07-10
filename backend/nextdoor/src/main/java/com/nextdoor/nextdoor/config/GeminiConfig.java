@@ -49,11 +49,6 @@ public class GeminiConfig {
     @Value("${custom.product-condition-analyzer-prompt-location}")
     private String productConditionAnalyzerPromptLocation;
 
-    @Bean
-    public VertexAI vertexAI() {
-        return new VertexAI(geminiProjectId, geminiLocation);
-    }
-
     @Bean(name = "geminiFlash")
     public GenerativeModel geminiAnalysisModel(VertexAI vertexAI) {
         return new GenerativeModel(geminiFlash, vertexAI);
