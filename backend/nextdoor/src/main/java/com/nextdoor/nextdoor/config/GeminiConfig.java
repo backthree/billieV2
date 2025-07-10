@@ -3,6 +3,9 @@ package com.nextdoor.nextdoor.config;
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.Part;
 import com.google.cloud.vertexai.generativeai.GenerativeModel;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatModel;
+import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -100,5 +103,32 @@ public class GeminiConfig {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load prompt from " + location, e);
         }
+    }
+
+    // Refactor
+    @Bean("geminiFlashChatClient")
+    public ChatClient geminiFlashChatClient(VertexAI vertexAI) {
+        var vertexAiGeminiChatOptions = VertexAiGeminiChatOptions.builder()
+                .temperature(0.7)
+                .candidateCount(1)
+                .model(geminiFlash)
+                .build();
+        return ChatClient.create(VertexAiGeminiChatModel.builder()
+                .vertexAI(vertexAI)
+                .defaultOptions(vertexAiGeminiChatOptions)
+                .build());
+    }
+
+    @Bean("geminiProChatClient")
+    public ChatClient geminiProChatClient(VertexAI vertexAI) {
+        var vertexAiGeminiChatOptions = VertexAiGeminiChatOptions.builder()
+                .temperature(0.7)
+                .candidateCount(1)
+                .model(geminiPro)
+                .build();
+        return ChatClient.create(VertexAiGeminiChatModel.builder()
+                .vertexAI(vertexAI)
+                .defaultOptions(vertexAiGeminiChatOptions)
+                .build());
     }
 }
