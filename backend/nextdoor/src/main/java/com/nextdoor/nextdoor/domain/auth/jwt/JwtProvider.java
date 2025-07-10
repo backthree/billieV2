@@ -19,6 +19,19 @@ public class JwtProvider {
     private static final String ISSUER = "nextdoor";
     private static final Key SECRET_KEY = Jwts.SIG.HS512.key().build();
 
+    public String createDummyToken(String userId, String uuid) {
+        Date expiryDate = Date.from(Instant.now().plus(24, ChronoUnit.HOURS));
+
+        return Jwts.builder()
+                .signWith(SECRET_KEY)
+                .subject(userId)
+                .claim("uuid", uuid)
+                .issuer(ISSUER)
+                .issuedAt(new Date())
+                .expiration(expiryDate)
+                .compact();
+    }
+
     public String createAccessToken(Authentication authentication) {
         CustomOAuth2User userPrincipal = (CustomOAuth2User) authentication.getPrincipal();
         Date expiryDate = Date.from(Instant.now().plus(24, ChronoUnit.HOURS));
@@ -51,4 +64,3 @@ public class JwtProvider {
                 .toString();
     }
 }
-
