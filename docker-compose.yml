@@ -53,6 +53,24 @@ services:
       timeout: 5s
       retries: 10
 
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysql-exporter
+    ports:
+      - "9104:9104"
+    command:
+      - "--mysqld.address=mysql:3306"
+      - "--mysqld.username=exporter"
+      - "--web.listen-address=0.0.0.0:9104"
+    environment:
+      - MYSQLD_EXPORTER_PASSWORD=your_password
+    restart: unless-stopped
+    networks:
+      - nextdoor-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   nextdoor-elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
     container_name: nextdoor-elasticsearch
