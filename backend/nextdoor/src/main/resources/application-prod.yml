@@ -40,6 +40,12 @@ spring:
       host: redis
       port: 6379
 
+  ai:
+    vertex:
+      ai:
+        gemini:
+          location: us-central1
+
 server:
   port: 8081
 

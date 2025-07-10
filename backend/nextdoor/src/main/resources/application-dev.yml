@@ -58,6 +58,12 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
 
+  ai:
+    vertex:
+      ai:
+        gemini:
+          location: us-central1
+
 server:
   port: 8081
 
