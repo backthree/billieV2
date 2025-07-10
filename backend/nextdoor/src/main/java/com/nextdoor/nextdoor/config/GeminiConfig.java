@@ -131,4 +131,38 @@ public class GeminiConfig {
                 .defaultOptions(vertexAiGeminiChatOptions)
                 .build());
     }
+
+    @Bean(name = "damageAnalyzerPrompt")
+    public String damageAnalyzerPrompt(ResourceLoader resourceLoader) {
+        return loadPromptText(resourceLoader, damageAnalyzerPromptLocation);
+    }
+
+    @Bean(name = "summarizerPrompt")
+    public String summarizerPrompt(ResourceLoader resourceLoader) {
+        return loadPromptText(resourceLoader, summarizerPromptLocation);
+    }
+
+    @Bean(name = "pairDamageComparatorPrompt")
+    public String pairDamageComparatorPrompt(ResourceLoader resourceLoader) {
+        return loadPromptText(resourceLoader, pairDamageComparatorPromptLocation);
+    }
+
+    @Bean(name = "productAnalyzerPrompt")
+    public String productAnalyzerPrompt(ResourceLoader resourceLoader) {
+        return loadPromptText(resourceLoader, productAnalyzerPromptLocation);
+    }
+
+    @Bean(name = "productConditionAnalyzerPrompt")
+    public String productConditionAnalyzerPrompt(ResourceLoader resourceLoader) {
+        return loadPromptText(resourceLoader, productConditionAnalyzerPromptLocation);
+    }
+
+    private String loadPromptText(ResourceLoader resourceLoader, String location) {
+        Resource resource = resourceLoader.getResource("classpath:" + location);
+        try {
+            return resource.getContentAsString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load prompt from " + location, e);
+        }
+    }
 }
