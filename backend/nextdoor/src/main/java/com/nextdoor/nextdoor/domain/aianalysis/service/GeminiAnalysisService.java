@@ -14,7 +14,6 @@ import com.nextdoor.nextdoor.domain.aianalysis.controller.dto.response.DamageCom
 import com.nextdoor.nextdoor.domain.aianalysis.enums.AiImageType;
 import com.nextdoor.nextdoor.domain.aianalysis.event.out.AiAnalysisCompletedEvent;
 import com.nextdoor.nextdoor.domain.aianalysis.event.out.AiCompareAnalysisCompletedEvent;
-import com.nextdoor.nextdoor.domain.aianalysis.exception.DamageAnalysisPresentException;
 import com.nextdoor.nextdoor.domain.aianalysis.exception.ExternalApiException;
 import com.nextdoor.nextdoor.domain.aianalysis.exception.GeminiResponseProcessingException;
 import com.nextdoor.nextdoor.domain.aianalysis.port.AiAnalysisMatcherCommandPort;
