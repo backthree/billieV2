@@ -55,7 +55,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/v1/posts"
+                                "/api/v1/posts",
+                                "/generate-tokens"
                         )
                         .permitAll()
                         .requestMatchers(

@@ -47,7 +47,6 @@ public class PostController {
 
     private final PostService postService;
     private final PostMapper postMapper;
-    private final JwtProvider jwtProvider;
 
     @GetMapping
     public ResponseEntity<Page<PostListResponse>> getPostsByUserAddress(
@@ -186,19 +185,5 @@ public class PostController {
         } else {
             return ResponseEntity.badRequest().build();
         }
-    }
-
-    @GetMapping("/generate-tokens")
-    public ResponseEntity<TokensResponse> generateTokens() {
-        List<String> tokens = new ArrayList<>(7125);
-
-        for (long i = 1; i <= 7125; i++) {
-            String userId = String.valueOf(i);
-            String uuid = UUID.randomUUID().toString();
-            String token = jwtProvider.createDummyToken(userId, uuid);
-            tokens.add(token);
-        }
-
-        return ResponseEntity.ok(TokensResponse.of(tokens));
     }
 }
