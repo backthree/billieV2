@@ -93,9 +93,12 @@ public class PostMapper {
     }
 
     public CreatePostResult toCreateResult(Post post, List<String> imageUrls) {
+        double lat = post.getLatitude() != null ? post.getLatitude() : 0.0;
+        double lng = post.getLongitude() != null ? post.getLongitude() : 0.0;
+
         LocationDto location = LocationDto.builder()
-                .latitude(post.getLatitude())
-                .longitude(post.getLongitude())
+                .latitude(lat)
+                .longitude(lng)
                 .build();
 
         return CreatePostResult.builder()
