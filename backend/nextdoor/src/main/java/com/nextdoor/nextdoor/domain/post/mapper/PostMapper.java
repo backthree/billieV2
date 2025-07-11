@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -46,7 +47,6 @@ public class PostMapper {
     }
 
     public PostDetailResponse toDetailResponse(PostDetailResult result, boolean isLiked) {
-
         return PostDetailResponse.builder()
                 .title(result.getTitle())
                 .content(result.getContent())
@@ -73,7 +73,7 @@ public class PostMapper {
                 .address(request.getAddress())
                 .preferredLocation(request.getPreferredLocation())
                 .authorId(authorId)
-                .productImages(productImages)
+                .productImages(productImages != null ? productImages : Collections.emptyList())
                 .build();
     }
 
@@ -122,7 +122,7 @@ public class PostMapper {
                 .address(request.getAddress())
                 .preferredLocation(request.getPreferredLocation())
                 .authorId(authorId)
-                .productImages(productImages)
+                .productImages(productImages != null ? productImages : Collections.emptyList())
                 .build();
     }
 
