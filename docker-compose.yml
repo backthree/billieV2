@@ -45,6 +45,7 @@ services:
       - MYSQL_DATABASE=nextdoor
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./docker/mysql/conf.d/slow.cnf:/etc/mysql/conf.d/slow.cnf:ro
     networks:
       - nextdoor-net
     healthcheck:
