@@ -60,12 +60,10 @@ public class GeminiClientAdapter implements AiClientPort {
                 UserMessage.builder()
                         .text("This is a before image.")
                         .media(convertToMedia(aiImagePair[0]))
-                        .media()
                         .build(),
                 UserMessage.builder()
                         .text("This is an after image.")
                         .media(convertToMedia(aiImagePair[1]))
-                        .media()
                         .build());
         return CompletableFuture.completedFuture(
                 chatClient.prompt()
