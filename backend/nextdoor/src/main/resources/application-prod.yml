@@ -24,12 +24,11 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
 
-  cassandra:
-    contact-points: nextdoor-cassandra #localhost:9042
-    port: 9042
-    keyspace-name: nextdoor_chat
-    local-datacenter: datacenter1
-    #    schema-action: CREATE_IF_NOT_EXISTS #테이블 없으면 엔티티보고 자동 생성
+#  cassandra:
+#    contact-points: nextdoor-cassandra #localhost:9042
+#    port: 9042
+#    keyspace-name: nextdoor_chat
+#    local-datacenter: datacenter1
 
   rabbitmq:
     host: nextdoor-rabbitmq
@@ -39,6 +38,8 @@ spring:
     redis:
       host: redis
       port: 6379
+    mongodb:
+      uri: mongodb://k12e205.p.ssafy.io:27017/nextdoor_chat
 
 server:
   port: 8081
