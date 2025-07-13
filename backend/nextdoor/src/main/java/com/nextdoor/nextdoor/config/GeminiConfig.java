@@ -28,12 +28,6 @@ public class GeminiConfig {
     @Value("${custom.google.ai.gemini.model.flashHigh}")
     private String geminiFlashHigh;
 
-    @Value("${custom.google.ai.gemini.location}")
-    private String geminiLocation;
-
-    @Value("${custom.google.ai.gemini.project-id}")
-    private String geminiProjectId;
-
     @Value("${custom.damage-analyzer-prompt-location}")
     private String damageAnalyzerPromptLocation;
 
@@ -49,35 +43,10 @@ public class GeminiConfig {
     @Value("${custom.product-condition-analyzer-prompt-location}")
     private String productConditionAnalyzerPromptLocation;
 
-    @Bean(name = "geminiFlash")
-    public GenerativeModel geminiAnalysisModel(VertexAI vertexAI) {
-        return new GenerativeModel(geminiFlash, vertexAI);
-    }
-
-    @Bean(name = "geminiPro")
-    public GenerativeModel geminiComparisonModel(VertexAI vertexAI) {
-        return new GenerativeModel(geminiPro, vertexAI);
-    }
-
     @Bean
     @Qualifier("geminiFlashHigh")
     public GenerativeModel geminiFlashHigh(VertexAI vertexAI) {
         return new GenerativeModel(geminiFlashHigh, vertexAI);
-    }
-
-    @Bean(name = "damageAnalyzerPromptPart")
-    public Part damageAnalyzerPromptPart(ResourceLoader resourceLoader) {
-        return loadPromptPart(resourceLoader, damageAnalyzerPromptLocation);
-    }
-
-    @Bean(name = "summarizerPromptPart")
-    public Part summarizerPromptPart(ResourceLoader resourceLoader) {
-        return loadPromptPart(resourceLoader, summarizerPromptLocation);
-    }
-
-    @Bean(name = "pairDamageComparatorPromptPart")
-    public Part pairDamageComparatorPromptPart(ResourceLoader resourceLoader) {
-        return loadPromptPart(resourceLoader, pairDamageComparatorPromptLocation);
     }
 
     @Bean(name = "productAnalyzerPromptPart")
