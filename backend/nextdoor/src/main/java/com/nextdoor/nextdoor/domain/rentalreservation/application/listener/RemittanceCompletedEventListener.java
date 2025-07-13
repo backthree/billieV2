@@ -1,0 +1,24 @@
+package com.nextdoor.nextdoor.domain.rentalreservation.application.listener;
+
+import com.nextdoor.nextdoor.domain.fintech.event.RemittanceCompletedEvent;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.service.RentalSettlementService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+@Component
+@RequiredArgsConstructor
+public class RemittanceCompletedEventListener {
+
+    private final RentalSettlementService rentalSettlementService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    @Async("asyncExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void handleRemittanceCompletedEvent(RemittanceCompletedEvent remittanceCompletedEvent){
+        rentalSettlementService.completeRemittanceProcessing(remittanceCompletedEvent);
+    }
+}

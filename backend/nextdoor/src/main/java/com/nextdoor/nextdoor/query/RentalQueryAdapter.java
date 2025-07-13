@@ -1,17 +1,17 @@
 package com.nextdoor.nextdoor.query;
 
 import com.nextdoor.nextdoor.common.Adapter;
-import com.nextdoor.nextdoor.domain.member.domain.QMember;
+import com.nextdoor.nextdoor.domain.member.domain.model.QMember;
 import com.nextdoor.nextdoor.domain.post.domain.QPost;
 import com.nextdoor.nextdoor.domain.post.domain.QProductImage;
-import com.nextdoor.nextdoor.domain.rental.domain.QRental;
-import com.nextdoor.nextdoor.domain.rental.domain.RentalProcess;
-import com.nextdoor.nextdoor.domain.rental.port.RentalQueryPort;
-import com.nextdoor.nextdoor.domain.rental.service.dto.ManagedRentalCountResult;
-import com.nextdoor.nextdoor.domain.rental.service.dto.RequestRemittanceResult;
-import com.nextdoor.nextdoor.domain.rental.service.dto.SearchRentalCommand;
-import com.nextdoor.nextdoor.domain.rental.service.dto.SearchRentalResult;
-import com.nextdoor.nextdoor.domain.reservation.domain.QReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.QRentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationProcess;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.port.RentalQueryPort;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.ManagedRentalCountResult;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.RequestRemittanceResult;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.SearchRentalCommand;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.dto.SearchRentalResult;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -34,8 +34,7 @@ import java.util.Optional;
 public class RentalQueryAdapter implements RentalQueryPort {
 
     private final JPAQueryFactory queryFactory;
-    private final QReservation reservation = QReservation.reservation;
-    private final QRental rental = QRental.rental;
+    private final QRentalReservation rentalReservation = QRentalReservation.rentalReservation;
     private final QPost post = QPost.post;
     private final QMember member = QMember.member;
     private final QMember owner = new QMember("owner");
@@ -52,35 +51,34 @@ public class RentalQueryAdapter implements RentalQueryPort {
         BooleanBuilder whereCondition = new BooleanBuilder();
 
         if(userRole.equalsIgnoreCase("OWNER")){
-            whereCondition.and(reservation.ownerId.eq(userId));
+            whereCondition.and(rentalReservation.ownerId.eq(userId));
         }else if(userRole.equalsIgnoreCase("RENTER")){
-            whereCondition.and(reservation.renterId.eq(userId));
+            whereCondition.and(rentalReservation.renterId.eq(userId));
         }
 
         whereCondition.and(rentalProcessCondition(condition));
 
         List<SearchRentalResult> results = queryFactory
                 .select(Projections.fields(SearchRentalResult.class,
-                        reservation.id.as("id"),
-                        reservation.postId,
-                        reservation.startDate.as("startDate"),
-                        reservation.endDate.as("endDate"),
-                        reservation.rentalFee,
-                        reservation.deposit,
-                        reservation.ownerId,
+                        rentalReservation.id.as("id"),
+                        rentalReservation.postId,
+                        rentalReservation.period.startDate.as("startDate"),
+                        rentalReservation.period.endDate.as("endDate"),
+                        rentalReservation.rentalFee,
+                        rentalReservation.deposit,
+                        rentalReservation.ownerId,
                         owner.profileImageUrl.as("ownerProfileImageUrl"),
-                        reservation.renterId,
+                        rentalReservation.renterId,
                         renter.profileImageUrl.as("renterProfileImageUrl"),
-                        rental.rentalId,
-                        rental.rentalProcess.stringValue().as("rentalProcess"),
-                        rental.rentalStatus.stringValue().as("rentalStatus"),
+                        rentalReservation.id.as("rentalId"),
+                        rentalReservation.rentalReservationProcess.stringValue().as("rentalProcess"),
+                        rentalReservation.rentalReservationStatus.stringValue().as("rentalStatus"),
                         post.title,
-                        rental.createdAt))
-                .from(reservation)
-                .join(rental).on(reservation.id.eq(rental.reservationId))
-                .join(post).on(reservation.postId.eq(post.id))
-                .join(owner).on(reservation.ownerId.eq(owner.id))
-                .join(renter).on(reservation.renterId.eq(renter.id))
+                        rentalReservation.createdAt))
+                .from(rentalReservation)
+                .join(post).on(rentalReservation.postId.eq(post.id))
+                .join(owner).on(rentalReservation.ownerId.eq(owner.id))
+                .join(renter).on(rentalReservation.renterId.eq(renter.id))
                 .where(whereCondition)
                 .distinct()
                 .offset(pageable.getOffset())
@@ -93,18 +91,17 @@ public class RentalQueryAdapter implements RentalQueryPort {
                     .select(productImage.imageUrl)
                     .from(productImage)
                     .join(productImage.post, post)
-                    .join(reservation).on(reservation.postId.eq(post.id))
-                    .where(reservation.id.eq(result.getId()))
+                    .join(rentalReservation).on(rentalReservation.postId.eq(post.id))
+                    .where(rentalReservation.id.eq(result.getId()))
                     .fetch();
 
             result.setProductImages(imageUrls);
         }
 
         Long total = queryFactory
-                .select(reservation.count())
-                .from(reservation)
-                .join(rental).on(reservation.id.eq(rental.reservationId))
-                .join(post).on(reservation.postId.eq(post.id))
+                .select(rentalReservation.count())
+                .from(rentalReservation)
+                .join(post).on(rentalReservation.postId.eq(post.id))
                 .where(whereCondition)
                 .fetchOne();
 
@@ -119,17 +116,16 @@ public class RentalQueryAdapter implements RentalQueryPort {
                                 RequestRemittanceResult.class,
                                 member.nickname.as("ownerNickname"),
                                 member.profileImageUrl.as("ownerProfileImageUrl"),
-                                rental.finalAmount,
-                                reservation.deposit,
-                                rental.accountNo,
-                                rental.bankCode,
-                                reservation.startDate,
-                                reservation.endDate
+                                rentalReservation.finalAmount,
+                                rentalReservation.deposit,
+                                rentalReservation.accountInfo.accountNo,
+                                rentalReservation.accountInfo.bankCode,
+                                rentalReservation.period.startDate,
+                                rentalReservation.period.endDate
                         ))
-                        .from(reservation)
-                        .join(member).on(reservation.ownerId.eq(member.id))
-                        .join(rental).on(reservation.id.eq(rental.reservationId))
-                        .where(reservation.rentalId.eq(rentalId))
+                        .from(rentalReservation)
+                        .join(member).on(rentalReservation.ownerId.eq(member.id))
+                        .where(rentalReservation.id.eq(rentalId))
                         .fetchOne()
         );
     }
@@ -144,11 +140,11 @@ public class RentalQueryAdapter implements RentalQueryPort {
 
                 switch (order.getProperty()) {
                     case "createdAt":
-                        orderSpecifiers.add(new OrderSpecifier<>(direction, rental.createdAt));
+                        orderSpecifiers.add(new OrderSpecifier<>(direction, rentalReservation.createdAt));
                         break;
 
                     default:
-                        orderSpecifiers.add(new OrderSpecifier<>(direction, rental.createdAt));
+                        orderSpecifiers.add(new OrderSpecifier<>(direction, rentalReservation.createdAt));
                         break;
                 }
             }
@@ -156,7 +152,7 @@ public class RentalQueryAdapter implements RentalQueryPort {
             return orderSpecifiers.toArray(new OrderSpecifier[0]);
         }
 
-        return new OrderSpecifier[] {new OrderSpecifier<>(Order.DESC, rental.createdAt)};
+        return new OrderSpecifier[] {new OrderSpecifier<>(Order.DESC, rentalReservation.createdAt)};
     }
 
     private BooleanExpression rentalProcessCondition(String condition){
@@ -165,9 +161,10 @@ public class RentalQueryAdapter implements RentalQueryPort {
         }
 
         if (condition.contains("ACTIVE")) {
-            return rental.rentalProcess.ne(RentalProcess.RENTAL_COMPLETED);
+            return rentalReservation.rentalReservationProcess.ne(RentalReservationProcess.RENTAL_COMPLETED)
+                    .and(rentalReservation.rentalReservationStatus.ne(RentalReservationStatus.PENDING));
         } else if (condition.contains("COMPLETED")) {
-            return rental.rentalProcess.eq(RentalProcess.RENTAL_COMPLETED);
+            return rentalReservation.rentalReservationProcess.eq(RentalReservationProcess.RENTAL_COMPLETED);
         }
 
         return null;
@@ -176,12 +173,11 @@ public class RentalQueryAdapter implements RentalQueryPort {
     @Override
     public ManagedRentalCountResult countManagedRentals(Long ownerId) {
         Long count = queryFactory
-                .select(rental.count())
-                .from(rental)
-                .join(reservation).on(rental.reservationId.eq(reservation.id))
+                .select(rentalReservation.count())
+                .from(rentalReservation)
                 .where(
-                    reservation.ownerId.eq(ownerId),
-                    rental.rentalProcess.ne(RentalProcess.RENTAL_COMPLETED)
+                    rentalReservation.ownerId.eq(ownerId),
+                    rentalReservation.rentalReservationProcess.ne(RentalReservationProcess.RENTAL_COMPLETED)
                 )
                 .fetchOne();
 
@@ -194,23 +190,22 @@ public class RentalQueryAdapter implements RentalQueryPort {
     public Optional<SearchRentalResult> findRentalById(Long rentalId) {
         SearchRentalResult result = queryFactory
                 .select(Projections.fields(SearchRentalResult.class,
-                        reservation.id.as("id"),
-                        reservation.postId,
-                        reservation.startDate.as("startDate"),
-                        reservation.endDate.as("endDate"),
-                        reservation.rentalFee,
-                        reservation.deposit,
-                        reservation.ownerId,
-                        reservation.renterId,
-                        rental.rentalId,
-                        rental.rentalProcess.stringValue().as("rentalProcess"),
-                        rental.rentalStatus.stringValue().as("rentalStatus"),
+                        rentalReservation.id.as("id"),
+                        rentalReservation.postId,
+                        rentalReservation.period.startDate.as("startDate"),
+                        rentalReservation.period.endDate.as("endDate"),
+                        rentalReservation.rentalFee,
+                        rentalReservation.deposit,
+                        rentalReservation.ownerId,
+                        rentalReservation.renterId,
+                        rentalReservation.id.as("rentalId"),
+                        rentalReservation.rentalReservationProcess.stringValue().as("rentalProcess"),
+                        rentalReservation.rentalReservationStatus.stringValue().as("rentalStatus"),
                         post.title,
-                        rental.createdAt))
-                .from(rental)
-                .join(reservation).on(rental.reservationId.eq(reservation.id))
-                .join(post).on(reservation.postId.eq(post.id))
-                .where(rental.rentalId.eq(rentalId))
+                        rentalReservation.createdAt))
+                .from(rentalReservation)
+                .join(post).on(rentalReservation.postId.eq(post.id))
+                .where(rentalReservation.id.eq(rentalId))
                 .fetchOne();
 
         if (result != null) {
@@ -218,8 +213,8 @@ public class RentalQueryAdapter implements RentalQueryPort {
                     .select(productImage.imageUrl)
                     .from(productImage)
                     .join(productImage.post, post)
-                    .join(reservation).on(reservation.postId.eq(post.id))
-                    .where(reservation.id.eq(result.getId()))
+                    .join(rentalReservation).on(rentalReservation.postId.eq(post.id))
+                    .where(rentalReservation.id.eq(result.getId()))
                     .fetch();
 
             result.setProductImages(imageUrls);

@@ -1,15 +1,15 @@
 package com.nextdoor.nextdoor.query;
 
 import com.nextdoor.nextdoor.common.Adapter;
-import com.nextdoor.nextdoor.domain.member.domain.QMember;
+import com.nextdoor.nextdoor.domain.member.domain.model.QMember;
 import com.nextdoor.nextdoor.domain.post.domain.QPost;
 import com.nextdoor.nextdoor.domain.post.domain.QProductImage;
-import com.nextdoor.nextdoor.domain.rental.domain.QRental;
-import com.nextdoor.nextdoor.domain.rental.exception.NoSuchRentalException;
-import com.nextdoor.nextdoor.domain.rental.message.RentalStatusMessage;
-import com.nextdoor.nextdoor.domain.rental.port.RentalDetailQueryPort;
-import com.nextdoor.nextdoor.domain.reservation.domain.QReservation;
-import com.nextdoor.nextdoor.domain.reservation.exception.NoSuchReservationException;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.QRentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchRentalException;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.NoSuchReservationException;
+import com.nextdoor.nextdoor.domain.rentalreservation.infrastructure.message.RentalStatusMessage;
+import com.nextdoor.nextdoor.domain.rentalreservation.application.port.RentalDetailQueryPort;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,31 +20,25 @@ import lombok.extern.slf4j.Slf4j;
 public class RentalDetailQueryAdapter implements RentalDetailQueryPort {
 
     private final JPAQueryFactory queryFactory;
-    private final QRental rental = QRental.rental;
-    private final QReservation reservation = QReservation.reservation;
+    private final QRentalReservation rentalReservation = QRentalReservation.rentalReservation;
     private final QPost post = QPost.post;
     private final QProductImage productImage = QProductImage.productImage;
     private final QMember member = QMember.member;
 
     public RentalStatusMessage.RentalDetailResult getRentalDetailByRentalIdAndRole(Long rentalId) {
-        Long reservationId = queryFactory
-                .select(rental.reservationId)
-                .from(rental)
-                .where(rental.rentalId.eq(rentalId))
+        RentalReservation rental = queryFactory
+                .selectFrom(rentalReservation)
+                .where(rentalReservation.id.eq(rentalId))
                 .fetchOne();
 
-        if (reservationId == null) {
+        if (rental == null) {
             throw new NoSuchRentalException("대여 정보가 존재하지 않습니다. rentalId: " + rentalId);
         }
 
-        Long postId = queryFactory
-                .select(reservation.postId)
-                .from(reservation)
-                .where(reservation.id.eq(reservationId))
-                .fetchOne();
+        Long postId = rental.getPostId();
 
         if (postId == null) {
-            throw new NoSuchReservationException("예약 정보가 존재하지 않습니다. reservationId: " + reservationId);
+            throw new NoSuchReservationException("예약 정보가 존재하지 않습니다. rentalId: " + rentalId);
         }
 
         String postTitle = queryFactory
@@ -61,15 +55,15 @@ public class RentalDetailQueryAdapter implements RentalDetailQueryPort {
 
 
         Long renterId = queryFactory
-                .select(reservation.renterId)
-                .from(reservation)
-                .where(reservation.id.eq(reservationId))
+                .select(rentalReservation.renterId)
+                .from(rentalReservation)
+                .where(rentalReservation.id.eq(rentalId))
                 .fetchOne();
 
         Long ownerId = queryFactory
-                .select(reservation.ownerId)
-                .from(reservation)
-                .where(reservation.id.eq(reservationId))
+                .select(rentalReservation.ownerId)
+                .from(rentalReservation)
+                .where(rentalReservation.id.eq(rentalId))
                 .fetchOne();
 
 

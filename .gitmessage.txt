@@ -1,30 +1,30 @@
-:: [] 내용 #<이슈 ID>
+: 내용
 
 ################
 # 제목은 50자 이내 / 변경사항이 "무엇"인지 명확히 작성 / 끝에 마침표 금지
-# <이모지 code> [<기능 태그>] <메시지> #<이슈 ID>의 형식
-# 예) :sparkles: [feat] 로그인 기능 완료 #S12P31E205-60
+# <태그>: <메시지>의 형식
+# 예) Feat: 로그인 기능 추가
 #
 # 본문(구체적인 내용)은 제목과 빈 행으로 구분하여 작성
 # 여러 줄로 본문을 작성할 땐 "-"로 구분 (한 줄은 72자 이내)
 ################
 
 ################
-# feat : 새로운 기능 추가 :sparkles:
-# chore : 빌드 부분 혹은 패키지 매니저 수정사항 :wrench:
-# fix : 버그 수정 :bug:
-# remove : 불필요한 코드/파일 삭제 :fire:
-# hotfix : 긴급 버그 수정 :ambulance:
-# style : UI/스타일 파일 추가 및 수정 :art:
-# refactor : 코드 리팩토링 :recycle:
-# docs : 문서 추가/수정 :memo:
-# deploy : 배포 관련 작업 :rocket:
-# test : 테스트 코드 추가/수정 :test_tube:
-# revert : 변경 사항 되돌리기 :rewind:
-# merge : 브랜치 합병 :twisted_rightwards_arrows:
-# db : 데이터베이스 관련 수정 :card_file_box:
-# comment : 주석 추가/수정 :bulb:
-# perf : 성능 개선 :zap:
-# config : 설정 파일 변경 :hammer_and_wrench:
-# typo : 오타 수정 :pencil:
+# Feat : 새로운 기능 추가 :sparkles:
+# Chore : 빌드 부분 혹은 패키지 매니저 수정사항 :wrench:
+# Fix : 버그 수정 :bug:
+# Remove : 불필요한 코드/파일 삭제 :fire:
+# Hotfix : 긴급 버그 수정 :ambulance:
+# Style : UI/스타일 파일 추가 및 수정 :art:
+# Refactor : 코드 리팩토링 :recycle:
+# Docs : 문서 추가/수정 :memo:
+# Deploy : 배포 관련 작업 :rocket:
+# Test : 테스트 코드 추가/수정 :test_tube:
+# Revert : 변경 사항 되돌리기 :rewind:
+# Merge : 브랜치 합병 :twisted_rightwards_arrows:
+# Db : 데이터베이스 관련 수정 :card_file_box:
+# Comment : 주석 추가/수정 :bulb:
+# Perf : 성능 개선 :zap:
+# Config : 설정 파일 변경 :hammer_and_wrench:
+# Typo : 오타 수정 :pencil:
 ################

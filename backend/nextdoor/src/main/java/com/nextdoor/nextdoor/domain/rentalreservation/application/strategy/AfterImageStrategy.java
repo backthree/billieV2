@@ -1,0 +1,29 @@
+package com.nextdoor.nextdoor.domain.rentalreservation.application.strategy;
+
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.AiImageType;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservation;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.exception.InvalidRentalStatusException;
+import org.springframework.stereotype.Component;
+
+@Component
+public class AfterImageStrategy implements RentalImageStrategy {
+
+    @Override
+    public void updateRentalImage(RentalReservation rentalReservation, String imageUrl, String mimeType) {
+        validateImageUploadAllowed(rentalReservation);
+        rentalReservation.addAiImage(getImageType(), imageUrl, mimeType);
+    }
+
+    @Override
+    public AiImageType getImageType() {
+        return AiImageType.AFTER;
+    }
+
+    @Override
+    public void validateImageUploadAllowed(RentalReservation rentalReservation) {
+        if(rentalReservation.getRentalReservationStatus() != RentalReservationStatus.RENTAL_PERIOD_ENDED){
+            throw new InvalidRentalStatusException("대여 이미지 업로드 불가능.");
+        }
+    }
+}

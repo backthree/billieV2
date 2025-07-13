@@ -1,6 +1,6 @@
 package com.nextdoor.nextdoor.domain.auth.filter;
 
-import com.nextdoor.nextdoor.domain.auth.service.JwtProvider;
+import com.nextdoor.nextdoor.domain.auth.jwt.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

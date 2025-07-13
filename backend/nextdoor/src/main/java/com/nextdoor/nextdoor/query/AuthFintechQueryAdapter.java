@@ -2,8 +2,8 @@ package com.nextdoor.nextdoor.query;
 
 import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.auth.port.AuthFintechQueryPort;
-import com.nextdoor.nextdoor.domain.auth.service.dto.AuthFintechQueryDto;
-import com.nextdoor.nextdoor.domain.member.domain.QMember;
+import com.nextdoor.nextdoor.domain.auth.dto.AuthFintechQueryDto;
+import com.nextdoor.nextdoor.domain.member.domain.model.QMember;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

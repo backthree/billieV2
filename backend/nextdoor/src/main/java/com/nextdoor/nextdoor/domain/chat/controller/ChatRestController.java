@@ -10,8 +10,8 @@ import com.nextdoor.nextdoor.domain.chat.port.ChatReservationQueryPort;
 import com.nextdoor.nextdoor.domain.chat.service.ChatRoomService;
 import com.nextdoor.nextdoor.domain.chat.service.MessageService;
 import com.nextdoor.nextdoor.domain.chat.service.UnreadCounterService;
-import com.nextdoor.nextdoor.domain.rental.domain.RentalProcess;
-import com.nextdoor.nextdoor.domain.reservation.enums.ReservationStatus;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationProcess;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.RentalReservationStatus;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -101,7 +100,7 @@ public class ChatRestController {
         }
 
         // 예약 상태가 PENDING이면 "예약중"
-        if (reservation.getStatus() == ReservationStatus.PENDING) {
+        if (reservation.getStatus() == RentalReservationStatus.PENDING) {
             return "예약중";
         }
 
@@ -117,7 +116,7 @@ public class ChatRestController {
         }
 
         // 렌탈 프로세스가 RENTAL_COMPLETED가 아니면 "거래중"
-        if (rental.getRentalProcess() != RentalProcess.RENTAL_COMPLETED) {
+        if (rental.getRentalReservationProcess() != RentalReservationProcess.RENTAL_COMPLETED) {
             return "거래중";
         }
 

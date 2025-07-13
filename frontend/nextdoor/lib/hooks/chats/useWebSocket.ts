@@ -18,7 +18,7 @@ export const useWebSocket = ({ roomId, onMessage }: UseWebSocketProps) => {
   const [error, setError] = useState<string | null>(null);
   const stompClientRef = useRef<Client | null>(null);
 
-  const WS_BASE_URL = 'http://k12e205.p.ssafy.io:8082';
+  const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL;
 
   // 토큰 가져오기
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;

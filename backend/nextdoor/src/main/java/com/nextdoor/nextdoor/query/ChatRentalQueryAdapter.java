@@ -3,7 +3,7 @@ package com.nextdoor.nextdoor.query;
 import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.chat.dto.RentalDto;
 import com.nextdoor.nextdoor.domain.chat.port.ChatRentalQueryPort;
-import com.nextdoor.nextdoor.domain.rental.domain.QRental;
+import com.nextdoor.nextdoor.domain.rentalreservation.domain.model.QRentalReservation;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -15,18 +15,18 @@ import java.util.Optional;
 public class ChatRentalQueryAdapter implements ChatRentalQueryPort {
 
     private final JPAQueryFactory jpaQueryFactory;
-    private final QRental qRental = QRental.rental;
+    private final QRentalReservation qRental = QRentalReservation.rentalReservation;
 
     @Override
     public Optional<RentalDto> findById(Long rentalId) {
         return Optional.ofNullable(jpaQueryFactory.select(
                         Projections.constructor(
                                 RentalDto.class,
-                                qRental.rentalId,
-                                qRental.rentalProcess
+                                qRental.id,
+                                qRental.rentalReservationProcess
                         ))
                 .from(qRental)
-                .where(qRental.rentalId.eq(rentalId))
+                .where(qRental.id.eq(rentalId))
                 .fetchOne());
     }
 }
