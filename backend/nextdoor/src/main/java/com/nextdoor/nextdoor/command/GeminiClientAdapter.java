@@ -52,7 +52,7 @@ public class GeminiClientAdapter implements AiClientPort {
 
     @Override
     @Async("asyncExecutor")
-    public CompletableFuture<String> generateContent(RentalDto.AiImageDto[] aiImagePair) {
+    public CompletableFuture<String> compare(RentalDto.AiImageDto[] aiImagePair) {
         List<Message> messages = List.of(
                 UserMessage.builder()
                         .text(pairDamageComparatorPrompt)
