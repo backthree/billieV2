@@ -83,6 +83,19 @@ public class GeminiConfig {
                 .build());
     }
 
+    @Bean("geminiFlashHighChatClient")
+    public ChatClient geminiFlashHighChatClient(VertexAI vertexAI) {
+        var vertexAiGeminiChatOptions = VertexAiGeminiChatOptions.builder()
+                .temperature(0.7)
+                .candidateCount(1)
+                .model(geminiFlash)
+                .build();
+        return ChatClient.create(VertexAiGeminiChatModel.builder()
+                .vertexAI(vertexAI)
+                .defaultOptions(vertexAiGeminiChatOptions)
+                .build());
+    }
+
     @Bean("geminiProChatClient")
     public ChatClient geminiProChatClient(VertexAI vertexAI) {
         var vertexAiGeminiChatOptions = VertexAiGeminiChatOptions.builder()
