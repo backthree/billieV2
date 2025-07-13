@@ -55,7 +55,7 @@ public class GeminiClientAdapter implements AiClientPort {
     public CompletableFuture<String> generateContent(RentalDto.AiImageDto[] aiImagePair) {
         List<Message> messages = List.of(
                 UserMessage.builder()
-                        .text("")
+                        .text(pairDamageComparatorPrompt)
                         .build(),
                 UserMessage.builder()
                         .text("This is a before image.")
