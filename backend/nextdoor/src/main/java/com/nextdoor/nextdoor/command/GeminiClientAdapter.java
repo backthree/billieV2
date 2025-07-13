@@ -41,11 +41,10 @@ public class GeminiClientAdapter implements AiClientPort {
 
     @Override
     public String analyzeDamage(List<RentalDto.AiImageDto> aiImages) {
-        return chatClient.prompt()
-                .user(u -> u.text(damageAnalyzerPrompt)
-                        .media(aiImages.stream()
-                                .map(this::convertToMedia)
-                                .toArray(Media[]::new)))
+        return chatClient.prompt(damageAnalyzerPrompt)
+                .user(u -> u.media(aiImages.stream()
+                        .map(this::convertToMedia)
+                        .toArray(Media[]::new)))
                 .call()
                 .content();
     }
@@ -55,9 +54,6 @@ public class GeminiClientAdapter implements AiClientPort {
     public CompletableFuture<String> compare(RentalDto.AiImageDto[] aiImagePair) {
         List<Message> messages = List.of(
                 UserMessage.builder()
-                        .text(pairDamageComparatorPrompt)
-                        .build(),
-                UserMessage.builder()
                         .text("This is a before image.")
                         .media(convertToMedia(aiImagePair[0]))
                         .build(),
@@ -66,7 +62,7 @@ public class GeminiClientAdapter implements AiClientPort {
                         .media(convertToMedia(aiImagePair[1]))
                         .build());
         return CompletableFuture.completedFuture(
-                chatClient.prompt()
+                chatClient.prompt(pairDamageComparatorPrompt)
                         .messages(messages)
                         .call()
                         .content());
@@ -77,5 +73,13 @@ public class GeminiClientAdapter implements AiClientPort {
                 .mimeType(MimeType.valueOf(aiImage.getMimeType()))
                 .data(URI.create(aiImage.getImageUrl()))
                 .build();
+    }
+
+    @Override
+    public String summarize(String content) {
+        return chatClient.prompt(summarizerPrompt)
+                .user(content)
+                .call()
+                .content();
     }
 }

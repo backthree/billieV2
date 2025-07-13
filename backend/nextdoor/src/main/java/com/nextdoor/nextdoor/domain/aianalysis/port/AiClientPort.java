@@ -10,4 +10,6 @@ public interface AiClientPort {
     String analyzeDamage(List<RentalDto.AiImageDto> aiImages);
 
     CompletableFuture<String> compare(RentalDto.AiImageDto[] aiImagePair);
+
+    String summarize(String content);
 }
