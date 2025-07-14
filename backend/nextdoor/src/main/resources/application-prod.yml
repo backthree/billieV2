@@ -1,3 +1,6 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: nextdoor
@@ -15,6 +18,7 @@ spring:
     properties:
       hibernate:
         default_batch_fetch_size: 1000
+        dialect: org.hibernate.dialect.MySQLDialect
     defer-datasource-initialization: true
     show-sql: false
   servlet:
@@ -28,16 +32,33 @@ spring:
       port: 6379
     mongodb:
       uri: mongodb://localhost:27017/nextdoor_chat
-
   rabbitmq:
     host: localhost
     port: 5672
-
   elasticsearch:
     uris: localhost:9200
 
-server:
-  port: 8081
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/api/v1/auth/oauth2/code/{registrationId}"
+            scope:
+              - profile_nickname
+              - profile_image
+              - account_email
+              - gender
+              - birthday
+            client-name: Kakao
+            client-authentication-method: client_secret_post
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
 
 custom:
   google:
