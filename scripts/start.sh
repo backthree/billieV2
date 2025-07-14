@@ -11,4 +11,4 @@ SPRING_ELASTICSEARCH_URIS=${SPRING_ELASTICSEARCH_URIS}
 EOF
 
 docker pull choijake/billie-app:latest
-docker-compose up -d
+docker compose up -d
