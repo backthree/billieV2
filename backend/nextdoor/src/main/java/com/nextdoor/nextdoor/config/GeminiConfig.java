@@ -1,12 +1,9 @@
 package com.nextdoor.nextdoor.config;
 
 import com.google.cloud.vertexai.VertexAI;
-import com.google.cloud.vertexai.api.Part;
-import com.google.cloud.vertexai.generativeai.GenerativeModel;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatModel;
 import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatOptions;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,33 +40,6 @@ public class GeminiConfig {
     @Value("${custom.product-condition-analyzer-prompt-location}")
     private String productConditionAnalyzerPromptLocation;
 
-    @Bean
-    @Qualifier("geminiFlashHigh")
-    public GenerativeModel geminiFlashHigh(VertexAI vertexAI) {
-        return new GenerativeModel(geminiFlashHigh, vertexAI);
-    }
-
-    @Bean(name = "productAnalyzerPromptPart")
-    public Part productAnalyzerPromptPart(ResourceLoader resourceLoader) {
-        return loadPromptPart(resourceLoader, productAnalyzerPromptLocation);
-    }
-
-    @Bean(name = "productConditionAnalyzerPromptPart")
-    public Part productConditionAnalyzerPromptPart(ResourceLoader resourceLoader) {
-        return loadPromptPart(resourceLoader, productConditionAnalyzerPromptLocation);
-    }
-
-    private Part loadPromptPart(ResourceLoader resourceLoader, String location) {
-        Resource resource = resourceLoader.getResource("classpath:" + location);
-        try {
-            String prompt = resource.getContentAsString(StandardCharsets.UTF_8);
-            return Part.newBuilder().setText(prompt).build();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load prompt from " + location, e);
-        }
-    }
-
-    // Refactor
     @Bean("geminiFlashChatClient")
     public ChatClient geminiFlashChatClient(VertexAI vertexAI) {
         var vertexAiGeminiChatOptions = VertexAiGeminiChatOptions.builder()
@@ -88,7 +58,7 @@ public class GeminiConfig {
         var vertexAiGeminiChatOptions = VertexAiGeminiChatOptions.builder()
                 .temperature(0.7)
                 .candidateCount(1)
-                .model(geminiFlash)
+                .model(geminiFlashHigh)
                 .build();
         return ChatClient.create(VertexAiGeminiChatModel.builder()
                 .vertexAI(vertexAI)
