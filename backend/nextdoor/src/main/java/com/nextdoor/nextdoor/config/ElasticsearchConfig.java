@@ -2,7 +2,6 @@ package com.nextdoor.nextdoor.config;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
@@ -24,8 +23,9 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
 
     @Override
     public ClientConfiguration clientConfiguration() {
-        ClientConfiguration.MaybeSecureClientConfigurationBuilder builder = ClientConfiguration.builder()
-                .connectedTo(elasticsearchUri);
+        ClientConfiguration.MaybeSecureClientConfigurationBuilder builder = (ClientConfiguration.MaybeSecureClientConfigurationBuilder) ClientConfiguration.builder()
+                .connectedTo(elasticsearchUri)
+                .usingSsl();
 
         if (!username.isEmpty() && !password.isEmpty()) {
             builder.withBasicAuth(username, password);
