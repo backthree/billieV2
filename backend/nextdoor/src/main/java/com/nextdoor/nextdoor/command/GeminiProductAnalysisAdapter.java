@@ -97,8 +97,10 @@ public class GeminiProductAnalysisAdapter implements ProductAnalysisPort {
     }
 
     private String callChatClient(String prompt, Media media) {
-        return chatClient.prompt(prompt)
-                .user(u -> u.media(media))
+        return chatClient.prompt()
+                .user(u -> u
+                        .text(prompt)
+                        .media(media))
                 .call()
                 .content();
     }
