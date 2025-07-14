@@ -1,0 +1,69 @@
+name: Backend CI/CD with Docker and CodeDeploy
+
+on:
+  push:
+    branches: [ "prod" ]
+
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  DOCKER_IMAGE: choijake/billie-app
+
+  AWS_REGION: ap-northeast-2
+  S3_BUCKET_NAME: billie-snapshot-bucket
+  CODE_DEPLOY_APP_NAME: billie-deploy
+  CODE_DEPLOY_GROUP_NAME: billie-deploy-group
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.DOCKER_IMAGE }}:latest
+
+      - name: Make deployment package
+        run: |
+          mkdir -p deploy
+          cp appspec.yml deploy/
+          cp docker-compose.yml deploy/
+          cp -r scripts deploy/
+          cd deploy
+          zip -r ../deploy.zip .
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload to S3
+        run: |
+          aws s3 cp \
+            deploy.zip \
+            s3://${{ env.S3_BUCKET_NAME }}/p2p-backend/deploy.zip
+
+      - name: Deploy to EC2 with CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name ${{ env.CODE_DEPLOY_APP_NAME }} \
+            --deployment-group-name ${{ env.CODE_DEPLOY_GROUP_NAME }} \
+            --s3-location bucket=${{ env.S3_BUCKET_NAME }},bundleType=zip,key=p2p-backend/deploy.zip \
+            --deployment-config-name CodeDeployDefault.OneAtATime \
+            --description "Deploying from GitHub Actions"
