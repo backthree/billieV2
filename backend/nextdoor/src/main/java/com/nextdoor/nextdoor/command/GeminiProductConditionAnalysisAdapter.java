@@ -2,17 +2,16 @@ package com.nextdoor.nextdoor.command;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.cloud.vertexai.api.Content;
-import com.google.cloud.vertexai.api.GenerateContentResponse;
-import com.google.cloud.vertexai.api.Part;
-import com.google.cloud.vertexai.generativeai.GenerativeModel;
-import com.google.cloud.vertexai.generativeai.PartMaker;
 import com.nextdoor.nextdoor.common.Adapter;
 import com.nextdoor.nextdoor.domain.aianalysis.controller.dto.response.ProductConditionAnalysisResponseDto;
 import com.nextdoor.nextdoor.domain.aianalysis.exception.ExternalApiException;
+import com.nextdoor.nextdoor.domain.post.exception.HttpFileReadException;
 import com.nextdoor.nextdoor.domain.post.port.ProductConditionAnalysisPort;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -24,45 +23,51 @@ import java.util.regex.Pattern;
 @Adapter
 public class GeminiProductConditionAnalysisAdapter implements ProductConditionAnalysisPort {
 
-    private final GenerativeModel generativeModel;
-    private final Part productConditionAnalyzerPromptPart;
+    private final ChatClient chatClient;
+    private final String productConditionAnalyzerPrompt;
     private final ObjectMapper objectMapper;
 
     public GeminiProductConditionAnalysisAdapter(
-            @Qualifier("geminiFlashHigh")
-            GenerativeModel generativeModel,
-            @Qualifier("productConditionAnalyzerPromptPart") Part productConditionAnalyzerPromptPart,
+            @Qualifier("geminiFlashHighChatClient")
+            ChatClient chatClient,
+            @Qualifier("productConditionAnalyzerPrompt")
+            String productConditionAnalyzerPrompt,
             ObjectMapper objectMapper
     ) {
-        this.generativeModel = generativeModel;
-        this.productConditionAnalyzerPromptPart = productConditionAnalyzerPromptPart;
+        this.chatClient = chatClient;
+        this.productConditionAnalyzerPrompt = productConditionAnalyzerPrompt;
         this.objectMapper = objectMapper;
     }
 
     @Override
     public ProductConditionAnalysisResponseDto analyzeProductCondition(MultipartFile productImage) {
+        MimeType mimeType = MimeType.valueOf(productImage.getContentType());
+        byte[] bytes;
         try {
-            Content content = createProductConditionAnalysisContent(productImage);
-            GenerateContentResponse response = generativeModel.generateContent(content);
-
-            String analysisResult = response.getCandidates(0).getContent().getParts(0).getText();
-            String cleanedResult = cleanMarkdownCodeBlocks(analysisResult);
-
-            Map<String, String> resultMap = objectMapper.readValue(cleanedResult, new TypeReference<Map<String, String>>() {});
-
-            String condition = resultMap.get("condition");
-            String report = resultMap.get("report");
-            String autoFillMessage = resultMap.get("autoFillMessage");
-
-            return ProductConditionAnalysisResponseDto.builder()
-                    .condition(condition)
-                    .report(report)
-                    .suggestAutoFill(true)
-                    .autoFillMessage(autoFillMessage)
-                    .build();
+            bytes = productImage.getBytes();
         } catch (IOException e) {
-            throw new ExternalApiException(e);
+            throw new HttpFileReadException();
         }
+        Media media = Media.builder()
+                .mimeType(mimeType)
+                .data(bytes)
+                .build();
+        String response = chatClient.prompt(productConditionAnalyzerPrompt)
+                .user(u -> u.media(media))
+                .call()
+                .content();
+        Map<String, String> resultMap;
+        try {
+            resultMap = objectMapper.readValue(cleanMarkdownCodeBlocks(response), new TypeReference<>() {});
+        } catch (IOException e) {
+            throw new ExternalApiException();
+        }
+        return ProductConditionAnalysisResponseDto.builder()
+                .condition(resultMap.get("condition"))
+                .report(resultMap.get("report"))
+                .suggestAutoFill(true)
+                .autoFillMessage(resultMap.get("autoFillMessage"))
+                .build();
     }
 
     private String cleanMarkdownCodeBlocks(String text) {
@@ -74,18 +79,5 @@ public class GeminiProductConditionAnalysisAdapter implements ProductConditionAn
         }
 
         return text.trim();
-    }
-
-    private Content createProductConditionAnalysisContent(MultipartFile productImage) throws IOException {
-        Part imagePart = PartMaker.fromMimeTypeAndData(
-                productImage.getContentType(),
-                productImage.getBytes()
-        );
-
-        return Content.newBuilder()
-                .addParts(productConditionAnalyzerPromptPart)
-                .addParts(imagePart)
-                .setRole("user")
-                .build();
     }
 }
