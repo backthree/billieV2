@@ -4,7 +4,6 @@ spring:
 
   transaction:
     default-timeout: 100
-
   datasource:
     hikari:
       maximum-pool-size: 10
@@ -18,28 +17,24 @@ spring:
         default_batch_fetch_size: 1000
     defer-datasource-initialization: true
     show-sql: false
-
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
 
-#  cassandra:
-#    contact-points: nextdoor-cassandra #localhost:9042
-#    port: 9042
-#    keyspace-name: nextdoor_chat
-#    local-datacenter: datacenter1
-
-  rabbitmq:
-    host: nextdoor-rabbitmq
-    port: 5672
-
   data:
     redis:
-      host: redis
+      host: localhost
       port: 6379
     mongodb:
-      uri: mongodb://k12e205.p.ssafy.io:27017/nextdoor_chat
+      uri: mongodb://localhost:27017/nextdoor_chat
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+  elasticsearch:
+    uris: localhost:9200
 
 server:
   port: 8081
