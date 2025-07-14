@@ -9,11 +9,12 @@ SPRING_DATA_REDIS_HOST=$(aws ssm get-parameter --name "/billie/prod/SPRING_DATA_
 SPRING_ELASTICSEARCH_URIS=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_URIS" --with-decryption --query "Parameter.Value" --output text)
 SPRING_RABBITMQ_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_RABBITMQ_USERNAME" --with-decryption --query "Parameter.Value" --output text)
 SPRING_RABBITMQ_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_RABBITMQ_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
-KAKAO_CLIENT_ID=$(aws ssm get-parameter --name "/billie/prod/SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KAKAO_CLIENT" --with-decryption --query "Parameter.Value" --output text)
+KAKAO_CLIENT_ID=$(aws ssm get-parameter --name "/billie/prod/SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KAKAO_CLIENT-ID" --with-decryption --query "Parameter.Value" --output text)
 KAKAO_CLIENT_SECRET=$(aws ssm get-parameter --name "/billie/prod/SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KAKAO_CLIENT-SECRET" --with-decryption --query "Parameter.Value" --output text)
 GEMINI_PROJECT_ID=$(aws ssm get-parameter --name "/billie/prod/CUSTOM_GOOGLE_AI_GEMINI_PROJECT-ID" --with-decryption --query "Parameter.Value" --output text)
 FINTECH_API_KEY=$(aws ssm get-parameter --name "/billie/prod/CUSTOM_FINTECH_APIKEY" --with-decryption --query "Parameter.Value" --output text)
-
+AWS_ACCESS_KEY_ID=$(aws ssm get-parameter --name "/billie/prod/AWS_ACCESS_KEY_ID" --with-decryption --query "Parameter.Value" --output text)
+AWS_SECRET_KEY_ID=$(aws ssm get-parameter --name "/billie/prod/AWS_SECRET_KEY_ID" --with-decryption --query "Parameter.Value" --output text)
 
 cat > .env << EOF
 SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
@@ -28,6 +29,8 @@ SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KAKAO_CLIENT-ID=${KAKAO_CLIENT_ID}
 SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KAKAO_CLIENT-SECRET=${KAKAO_CLIENT_SECRET}
 CUSTOM_GOOGLE_AI_GEMINI_PROJECT-ID=${GEMINI_PROJECT_ID}
 CUSTOM_FINTECH_APIKEY=${FINTECH_API_KEY}
+CLOUD_AWS_CREDENTIALS_ACCESS-KEY=${AWS_ACCESS_KEY_ID}
+CLOUD_AWS_CREDENTIALS_SECRET-KEY=${AWS_SECRET_KEY_ID}
 EOF
 
 docker pull choijake/billie-app:latest
