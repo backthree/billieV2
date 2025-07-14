@@ -6,7 +6,6 @@ COPY . .
 
 RUN chmod +x ./gradlew && ./gradlew bootJar
 
-
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
@@ -15,6 +14,6 @@ COPY --from=builder /workspace/build/libs/*.jar app.jar
 
 EXPOSE 8081
 
-ENV ACTIVE_PROFILE=prod
+ENV SPRING_PROFILES_ACTIVE=prod
 
 ENTRYPOINT ["java","-jar","app.jar"]
