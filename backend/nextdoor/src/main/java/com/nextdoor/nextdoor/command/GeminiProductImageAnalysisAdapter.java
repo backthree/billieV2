@@ -1,5 +1,6 @@
 package com.nextdoor.nextdoor.command;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.vertexai.api.Content;
 import com.google.cloud.vertexai.api.GenerateContentResponse;
@@ -7,12 +8,17 @@ import com.google.cloud.vertexai.api.Part;
 import com.google.cloud.vertexai.generativeai.GenerativeModel;
 import com.google.cloud.vertexai.generativeai.PartMaker;
 import com.nextdoor.nextdoor.common.Adapter;
+import com.nextdoor.nextdoor.domain.aianalysis.controller.dto.response.ProductConditionAnalysisResponseDto;
 import com.nextdoor.nextdoor.domain.aianalysis.exception.ExternalApiException;
 import com.nextdoor.nextdoor.domain.post.controller.dto.response.AnalyzeProductImageResponse;
 import com.nextdoor.nextdoor.domain.post.domain.Category;
+import com.nextdoor.nextdoor.domain.post.exception.HttpFileReadException;
 import com.nextdoor.nextdoor.domain.post.port.ProductImageAnalysisPort;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -24,43 +30,51 @@ import java.util.regex.Pattern;
 @Adapter
 public class GeminiProductImageAnalysisAdapter implements ProductImageAnalysisPort {
 
-    private final GenerativeModel generativeModel;
-
-    private final Part productAnalyzerPromptPart;
-
+    private final ChatClient chatClient;
+    private final String productAnalyzerPrompt;
     private final ObjectMapper objectMapper;
 
     public GeminiProductImageAnalysisAdapter(
-            @Qualifier("geminiFlashHigh")
-            GenerativeModel generativeModel,
-            @Qualifier("productAnalyzerPromptPart") Part productAnalyzerPromptPart,
+            @Qualifier("geminiFlashHighChatClient")
+            ChatClient chatClient,
+            @Qualifier("productAnalyzerPrompt")
+            String  productAnalyzerPrompt,
             ObjectMapper objectMapper
     ) {
-        this.generativeModel = generativeModel;
-        this.productAnalyzerPromptPart = productAnalyzerPromptPart;
+        this.chatClient = chatClient;
+        this.productAnalyzerPrompt = productAnalyzerPrompt;
         this.objectMapper = objectMapper;
     }
 
     @Override
     public AnalyzeProductImageResponse analyzeProductImage(MultipartFile productImage) {
+        MimeType mimeType = MimeType.valueOf(productImage.getContentType());
+        byte[] bytes;
         try {
-            GenerateContentResponse response = generativeModel.generateContent(createAnalysisContent(productImage));
-            String analysisResult = response.getCandidates(0).getContent().getParts(0).getText();
-
-            // 마크다운 코드 블록 제거
-            String cleanedResult = cleanMarkdownCodeBlocks(analysisResult);
-
-            Map<String, Object> resultMap = objectMapper.readValue(cleanedResult, Map.class);
-
-            return AnalyzeProductImageResponse.builder()
-                    .title((String) resultMap.get("title"))
-                    .content((String) resultMap.get("content"))
-                    .category(Category.from((String) resultMap.get("category")))
-                    .condition((String) resultMap.get("condition"))
-                    .build();
+            bytes = productImage.getBytes();
         } catch (IOException e) {
-            throw new ExternalApiException(e);
+            throw new HttpFileReadException();
         }
+        Media media = Media.builder()
+                .mimeType(mimeType)
+                .data(bytes)
+                .build();
+        String response = chatClient.prompt(productAnalyzerPrompt)
+                .user(u -> u.media(media))
+                .call()
+                .content();
+        Map<String, String> resultMap;
+        try {
+            resultMap = objectMapper.readValue(cleanMarkdownCodeBlocks(response), new TypeReference<>() {});
+        } catch (IOException e) {
+            throw new ExternalApiException();
+        }
+        return AnalyzeProductImageResponse.builder()
+                .title(resultMap.get("title"))
+                .content(resultMap.get("content"))
+                .category(Category.from(resultMap.get("category")))
+                .condition(resultMap.get("condition"))
+                .build();
     }
 
     private String cleanMarkdownCodeBlocks(String text) {
@@ -72,18 +86,5 @@ public class GeminiProductImageAnalysisAdapter implements ProductImageAnalysisPo
         }
 
         return text.trim();
-    }
-
-    private Content createAnalysisContent(MultipartFile productImage) throws IOException {
-        Part imagePart = PartMaker.fromMimeTypeAndData(
-                productImage.getContentType(),
-                productImage.getBytes()
-        );
-
-        return Content.newBuilder()
-                .addParts(imagePart)
-                .addParts(productAnalyzerPromptPart)
-                .setRole("user")
-                .build();
     }
 }
