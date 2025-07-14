@@ -1,10 +1,17 @@
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jdk AS builder
 
-ARG JAR_FILE=build/libs/*.jar
+WORKDIR /workspace
+
+COPY . .
+
+RUN chmod +x ./gradlew && ./gradlew bootJar
+
+
+FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-COPY ${JAR_FILE} app.jar
+COPY --from=builder /workspace/build/libs/*.jar app.jar
 
 EXPOSE 8081
 
