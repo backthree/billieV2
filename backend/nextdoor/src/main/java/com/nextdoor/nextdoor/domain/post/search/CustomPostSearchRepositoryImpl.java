@@ -1,22 +1,23 @@
 package com.nextdoor.nextdoor.domain.post.search;
 
 import lombok.RequiredArgsConstructor;
+import org.opensearch.client.opensearch._types.FieldValue;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.opensearch.data.client.osc.NativeQuery;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.support.PageableExecutionUtils;
-import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
-
+import org.opensearch.client.opensearch._types.query_dsl.Operator;
+import org.opensearch.client.opensearch._types.query_dsl.Query;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
+import org.opensearch.client.opensearch._types.query_dsl.BoolQuery;
+import org.opensearch.client.opensearch._types.query_dsl.MatchQuery;
+import org.opensearch.client.opensearch._types.query_dsl.TermQuery;
 
 @RequiredArgsConstructor
 public class CustomPostSearchRepositoryImpl implements CustomPostSearchRepository {
@@ -32,7 +33,7 @@ public class CustomPostSearchRepositoryImpl implements CustomPostSearchRepositor
             boolQuery.must(
                     new TermQuery.Builder()
                             .field("address.keyword")
-                            .value(address)
+                            .value(FieldValue.of(address))
                             .build()._toQuery()
             );
         }
@@ -41,7 +42,7 @@ public class CustomPostSearchRepositoryImpl implements CustomPostSearchRepositor
             boolQuery.should(
                     new MatchQuery.Builder()
                             .field("title")
-                            .query(keyword)
+                            .query(FieldValue.of(keyword))
                             .operator(Operator.And)
                             .boost(3.0f)
                             .build()._toQuery()
@@ -50,7 +51,7 @@ public class CustomPostSearchRepositoryImpl implements CustomPostSearchRepositor
             boolQuery.should(
                     new MatchQuery.Builder()
                             .field("content")
-                            .query(keyword)
+                            .query(FieldValue.of(keyword))
                             .operator(Operator.And)
                             .boost(1.0f)
                             .build()._toQuery()
@@ -59,8 +60,10 @@ public class CustomPostSearchRepositoryImpl implements CustomPostSearchRepositor
             boolQuery.minimumShouldMatch("1");
         }
 
+        Query query = boolQuery.build()._toQuery();
+
         NativeQuery searchQuery = NativeQuery.builder()
-                .withQuery(boolQuery.build()._toQuery())
+                .withQuery(query)
                 .withPageable(pageable)
                 .build();
 
