@@ -6,6 +6,7 @@ import org.opensearch.data.client.orhlc.AbstractOpenSearchConfiguration;
 import org.opensearch.data.client.orhlc.ClientConfiguration;
 import org.opensearch.data.client.orhlc.RestClients;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
@@ -25,6 +26,7 @@ public class OpenSearchConfig extends AbstractOpenSearchConfiguration {
     @Value("${spring.elasticsearch.password:}")
     private String password;
 
+    @Bean(name = "customOpenSearchClient")
     @Override
     public RestHighLevelClient opensearchClient() {
         final ClientConfiguration clientConfiguration = ClientConfiguration.builder()
