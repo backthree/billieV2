@@ -17,7 +17,7 @@ public class PostDocument {
   private Long id;
 
   @MultiField(
-          mainField = @Field(type = FieldType.Text, analyzer = "korean"),
+          mainField = @Field(type = FieldType.Text, analyzer = "nori"),
           otherFields = {
                   @InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)
           }
@@ -25,7 +25,7 @@ public class PostDocument {
   private String title;
 
   @MultiField(
-          mainField = @Field(type = FieldType.Text, analyzer = "korean"),
+          mainField = @Field(type = FieldType.Text, analyzer = "nori"),
           otherFields = {
                   @InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)
           }
@@ -39,7 +39,7 @@ public class PostDocument {
   private Long deposit;
 
   @MultiField(
-          mainField = @Field(type = FieldType.Text, analyzer = "korean"),
+          mainField = @Field(type = FieldType.Text, analyzer = "nori"),
           otherFields = {
                   @InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)
           }
