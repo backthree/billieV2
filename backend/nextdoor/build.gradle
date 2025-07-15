@@ -28,6 +28,12 @@ configurations {
 
 repositories {
 	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone' }
+	maven { url 'https://repo.spring.io/snapshot' }
+	maven {
+		name = 'Central Portal Snapshots'
+		url = 'https://central.sonatype.com/repository/maven-snapshots/'
+	}
 }
 
 dependencies {
@@ -62,6 +68,10 @@ dependencies {
 	// Elasticsearch 관련 의존성 수정
 	implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	// Spring AI
+	implementation platform("org.springframework.ai:spring-ai-bom:1.1.0-SNAPSHOT")
+	implementation 'org.springframework.ai:spring-ai-starter-mcp-client'
+	implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
 }
 
 tasks.named('test') {

@@ -10,10 +10,7 @@ import com.nextdoor.nextdoor.domain.post.event.PostUpdatedEvent;
 import com.nextdoor.nextdoor.domain.post.exception.NoSuchPostException;
 import com.nextdoor.nextdoor.domain.post.exception.PostImageUploadException;
 import com.nextdoor.nextdoor.domain.post.mapper.PostMapper;
-import com.nextdoor.nextdoor.domain.post.port.PostQueryPort;
-import com.nextdoor.nextdoor.domain.post.port.ProductConditionAnalysisPort;
-import com.nextdoor.nextdoor.domain.post.port.ProductImageAnalysisPort;
-import com.nextdoor.nextdoor.domain.post.port.S3ImageUploadPort;
+import com.nextdoor.nextdoor.domain.post.port.*;
 import com.nextdoor.nextdoor.domain.post.repository.PostLikeCountRepository;
 import com.nextdoor.nextdoor.domain.post.repository.PostLikeRepository;
 import com.nextdoor.nextdoor.domain.post.repository.PostRepository;
@@ -40,8 +37,7 @@ public class PostServiceImpl implements PostService {
     private final PostLikeCountRepository postLikeCountRepository;
     private final S3ImageUploadPort s3ImageUploadPort;
     private final PostMapper postMapper;
-    private final ProductImageAnalysisPort productImageAnalysisPort;
-    private final ProductConditionAnalysisPort productConditionAnalysisPort;
+    private final ProductAnalysisPort productAnalysisPort;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -102,13 +98,13 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public AnalyzeProductImageResponse analyzeProductImage(MultipartFile productImage) {
-        return productImageAnalysisPort.analyzeProductImage(productImage);
+        return productAnalysisPort.analyzeProductImage(productImage);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductConditionAnalysisResponseDto analyzeProductCondition(MultipartFile productImage) {
-        return productConditionAnalysisPort.analyzeProductCondition(productImage);
+        return productAnalysisPort.analyzeProductCondition(productImage);
     }
 
     @Override
