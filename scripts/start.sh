@@ -6,7 +6,7 @@ SPRING_DATASOURCE_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_D
 SPRING_DATASOURCE_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_DATASOURCE_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
 SPRING_DATA_MONGODB_URI=$(aws ssm get-parameter --name "/billie/prod/SPRING_DATA_MONGODB_URI" --with-decryption --query "Parameter.Value" --output text)
 SPRING_DATA_REDIS_HOST=$(aws ssm get-parameter --name "/billie/prod/SPRING_DATA_REDIS_HOST" --with-decryption --query "Parameter.Value" --output text)
-SPRING_OPENSEARCH_URIS=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_URIS" --with-decryption --query "Parameter.Value" --output text)
+SPRING_OPENSEARCH_URIS=$(aws ssm get-parameter --name "/billie/prod/SPRING_OPENSEARCH_URIS" --with-decryption --query "Parameter.Value" --output text)
 SPRING_RABBITMQ_ADDRESSES=$(aws ssm get-parameter --name "/billie/prod/SPRING_RABBITMQ_ADDRESSES" --with-decryption --query "Parameter.Value" --output text)
 SPRING_RABBITMQ_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_RABBITMQ_USERNAME" --with-decryption --query "Parameter.Value" --output text)
 SPRING_RABBITMQ_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_RABBITMQ_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
@@ -16,8 +16,8 @@ GEMINI_PROJECT_ID=$(aws ssm get-parameter --name "/billie/prod/CUSTOM_GOOGLE_AI_
 FINTECH_API_KEY=$(aws ssm get-parameter --name "/billie/prod/CUSTOM_FINTECH_APIKEY" --with-decryption --query "Parameter.Value" --output text)
 AWS_ACCESS_KEY_ID=$(aws ssm get-parameter --name "/billie/prod/AWS_ACCESS_KEY_ID" --with-decryption --query "Parameter.Value" --output text)
 AWS_SECRET_KEY_ID=$(aws ssm get-parameter --name "/billie/prod/AWS_SECRET_KEY_ID" --with-decryption --query "Parameter.Value" --output text)
-SPRING_OPENSEARCH_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_USERNAME" --with-decryption --query "Parameter.Value" --output text)
-SPRING_OPENSEARCH_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
+SPRING_OPENSEARCH_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_OPENSEARCH_USERNAME" --with-decryption --query "Parameter.Value" --output text)
+SPRING_OPENSEARCH_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_OPENSEARCH_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
 
 cat > .env << EOF
 SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
