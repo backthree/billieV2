@@ -34,7 +34,6 @@ spring:
       uri: mongodb://localhost:27017/nextdoor_chat
   rabbitmq:
     host: localhost
-    port: 5672
   elasticsearch:
     uris: localhost:9200
 
