@@ -37,6 +37,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.security:spring-security-messaging:6.5.1'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
@@ -52,9 +53,9 @@ dependencies {
 	implementation 'com.google.protobuf:protobuf-java:4.30.2'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'org.springframework.boot:spring-boot-starter-quartz'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux' //(WebClient 포함)
-	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.609'  //S3 store
-	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb' //몽고 DB 연동
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.609'
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	implementation 'io.jsonwebtoken:jjwt-gson:0.12.6'
