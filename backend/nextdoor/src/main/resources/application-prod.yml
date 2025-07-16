@@ -38,10 +38,10 @@ spring:
       port: 6379
     mongodb:
       uri: mongodb://localhost:27017/nextdoor_chat
+    opensearch:
+      uris: localhost:9200
   rabbitmq:
     addresses: localhost:5671
-  elasticsearch:
-    uris: localhost:9200
 
   security:
     oauth2:
