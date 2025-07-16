@@ -44,6 +44,12 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(httpRequest -> httpRequest
                         .requestMatchers(
+                                "/actuator/prometheus",
+                                "/actuator/health",
+                                "/actuator/info"
+                        )
+                        .permitAll()
+                        .requestMatchers(
                                 "/api/v1/auth"
                         )
                         .permitAll()
