@@ -6,7 +6,7 @@ SPRING_DATASOURCE_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_D
 SPRING_DATASOURCE_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_DATASOURCE_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
 SPRING_DATA_MONGODB_URI=$(aws ssm get-parameter --name "/billie/prod/SPRING_DATA_MONGODB_URI" --with-decryption --query "Parameter.Value" --output text)
 SPRING_DATA_REDIS_HOST=$(aws ssm get-parameter --name "/billie/prod/SPRING_DATA_REDIS_HOST" --with-decryption --query "Parameter.Value" --output text)
-SPRING_OPENSEARCH_URIS=$(aws ssm get-parameter --name "/billie/prod/SPRING_OPENSEARCH_URIS" --with-decryption --query "Parameter.Value" --output text)
+SPRING_ELASTICSEARCH_URIS=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_URIS" --with-decryption --query "Parameter.Value" --output text)
 SPRING_RABBITMQ_ADDRESSES=$(aws ssm get-parameter --name "/billie/prod/SPRING_RABBITMQ_ADDRESSES" --with-decryption --query "Parameter.Value" --output text)
 SPRING_RABBITMQ_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_RABBITMQ_USERNAME" --with-decryption --query "Parameter.Value" --output text)
 SPRING_RABBITMQ_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_RABBITMQ_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
@@ -16,8 +16,8 @@ GEMINI_PROJECT_ID=$(aws ssm get-parameter --name "/billie/prod/CUSTOM_GOOGLE_AI_
 FINTECH_API_KEY=$(aws ssm get-parameter --name "/billie/prod/CUSTOM_FINTECH_APIKEY" --with-decryption --query "Parameter.Value" --output text)
 AWS_ACCESS_KEY_ID=$(aws ssm get-parameter --name "/billie/prod/AWS_ACCESS_KEY_ID" --with-decryption --query "Parameter.Value" --output text)
 AWS_SECRET_KEY_ID=$(aws ssm get-parameter --name "/billie/prod/AWS_SECRET_KEY_ID" --with-decryption --query "Parameter.Value" --output text)
-SPRING_OPENSEARCH_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_OPENSEARCH_USERNAME" --with-decryption --query "Parameter.Value" --output text)
-SPRING_OPENSEARCH_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_OPENSEARCH_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
+SPRING_ELASTICSEARCH_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_USERNAME" --with-decryption --query "Parameter.Value" --output text)
+SPRING_ELASTICSEARCH_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
 
 cat > .env << EOF
 SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
@@ -25,7 +25,7 @@ SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
 SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
 SPRING_DATA_MONGODB_URI=${SPRING_DATA_MONGODB_URI}
 SPRING_RABBITMQ_ADDRESSES=${SPRING_RABBITMQ_ADDRESSES}
-SPRING_OPENSEARCH_URIS=${SPRING_OPENSEARCH_URIS}
+SPRING_ELASTICSEARCH_URIS=${SPRING_ELASTICSEARCH_URIS}
 SPRING_RABBITMQ_HOST=${SPRING_RABBITMQ_HOST}
 SPRING_RABBITMQ_USERNAME=${SPRING_RABBITMQ_USERNAME}
 SPRING_RABBITMQ_PASSWORD=${SPRING_RABBITMQ_PASSWORD}
@@ -35,8 +35,8 @@ CUSTOM_GOOGLE_AI_GEMINI_PROJECT-ID=${GEMINI_PROJECT_ID}
 CUSTOM_FINTECH_APIKEY=${FINTECH_API_KEY}
 CLOUD_AWS_CREDENTIALS_ACCESS-KEY=${AWS_ACCESS_KEY_ID}
 CLOUD_AWS_CREDENTIALS_SECRET-KEY=${AWS_SECRET_KEY_ID}
-SPRING_OPENSEARCH_USERNAME=${SPRING_OPENSEARCH_USERNAME}
-SPRING_OPENSEARCH_PASSWORD=${SPRING_OPENSEARCH_PASSWORD}
+SPRING_ELASTICSEARCH_USERNAME=${SPRING_ELASTICSEARCH_USERNAME}
+SPRING_ELASTICSEARCH_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
 EOF
 
 docker pull choijake/billie-app:latest
