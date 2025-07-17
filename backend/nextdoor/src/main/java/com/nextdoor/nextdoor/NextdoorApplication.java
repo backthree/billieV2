@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-@SpringBootApplication(exclude = {ElasticsearchDataAutoConfiguration.class})
+@SpringBootApplication
 @EnableAsync
 @EnableRabbit
 public class NextdoorApplication {
