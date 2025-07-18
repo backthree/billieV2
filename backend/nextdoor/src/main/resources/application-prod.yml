@@ -36,7 +36,8 @@ spring:
     redis:
       host: localhost
       port: 6379
-      ssl: true
+      ssl:
+        enabled: true
     mongodb:
       uri: mongodb://localhost:27017/nextdoor_chat
   rabbitmq:
