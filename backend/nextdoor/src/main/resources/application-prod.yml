@@ -94,3 +94,12 @@ elasticsearch:
     posts:
       name: posts
       alias: posts-alias
+
+logging:
+  level:
+    org.springframework.data.elasticsearch: DEBUG
+    org.elasticsearch.client: DEBUG
+    co.elastic.clients: DEBUG
+
+    org.apache.http: DEBUG
+    org.elasticsearch.client.RestClient: DEBUG
