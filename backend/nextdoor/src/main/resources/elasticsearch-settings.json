@@ -1,0 +1,11 @@
+{
+  "analysis": {
+    "analyzer": {
+      "nori": {
+        "type": "nori",
+        "decompound_mode": "mixed",
+        "stopwords": "_none_"
+      }
+    }
+  }
+}

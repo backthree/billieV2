@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.*;
 import lombok.*;
 
+@Setting(settingPath = "/elasticsearch-settings.json")
 @Document(indexName = "posts")
 @Getter
 @Setter
