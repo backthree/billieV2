@@ -15,20 +15,20 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
     @Value("${spring.elasticsearch.uris}")
     private String elasticsearchUri;
 
-    @Value("${spring.elasticsearch.username:}")
-    private String username;
-
-    @Value("${spring.elasticsearch.password:}")
-    private String password;
+//    @Value("${spring.elasticsearch.username:}")
+//    private String username;
+//
+//    @Value("${spring.elasticsearch.password:}")
+//    private String password;
 
     @Override
     public ClientConfiguration clientConfiguration() {
         ClientConfiguration.MaybeSecureClientConfigurationBuilder builder = ClientConfiguration.builder()
                 .connectedTo(elasticsearchUri);
 
-        if (!username.isEmpty() && !password.isEmpty()) {
-            builder.withBasicAuth(username, password);
-        }
+//        if (!username.isEmpty() && !password.isEmpty()) {
+//            builder.withBasicAuth(username, password);
+//        }
 
         return builder.build();
     }

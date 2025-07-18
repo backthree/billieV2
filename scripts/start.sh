@@ -16,8 +16,8 @@ GEMINI_PROJECT_ID=$(aws ssm get-parameter --name "/billie/prod/CUSTOM_GOOGLE_AI_
 FINTECH_API_KEY=$(aws ssm get-parameter --name "/billie/prod/CUSTOM_FINTECH_APIKEY" --with-decryption --query "Parameter.Value" --output text)
 AWS_ACCESS_KEY_ID=$(aws ssm get-parameter --name "/billie/prod/AWS_ACCESS_KEY_ID" --with-decryption --query "Parameter.Value" --output text)
 AWS_SECRET_KEY_ID=$(aws ssm get-parameter --name "/billie/prod/AWS_SECRET_KEY_ID" --with-decryption --query "Parameter.Value" --output text)
-SPRING_ELASTICSEARCH_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_USERNAME" --with-decryption --query "Parameter.Value" --output text)
-SPRING_ELASTICSEARCH_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
+#SPRING_ELASTICSEARCH_USERNAME=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_USERNAME" --with-decryption --query "Parameter.Value" --output text)
+#SPRING_ELASTICSEARCH_PASSWORD=$(aws ssm get-parameter --name "/billie/prod/SPRING_ELASTICSEARCH_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
 
 cat > .env << EOF
 SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
@@ -36,8 +36,8 @@ CUSTOM_GOOGLE_AI_GEMINI_PROJECT-ID=${GEMINI_PROJECT_ID}
 CUSTOM_FINTECH_APIKEY=${FINTECH_API_KEY}
 CLOUD_AWS_CREDENTIALS_ACCESS-KEY=${AWS_ACCESS_KEY_ID}
 CLOUD_AWS_CREDENTIALS_SECRET-KEY=${AWS_SECRET_KEY_ID}
-SPRING_ELASTICSEARCH_USERNAME=${SPRING_ELASTICSEARCH_USERNAME}
-SPRING_ELASTICSEARCH_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
+#SPRING_ELASTICSEARCH_USERNAME=${SPRING_ELASTICSEARCH_USERNAME}
+#SPRING_ELASTICSEARCH_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
 EOF
 
 docker pull choijake/billie-app:latest
