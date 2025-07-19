@@ -5,8 +5,10 @@ import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2SuccessHandler;
 import com.nextdoor.nextdoor.domain.auth.filter.JwtAuthenticationFilter;
 import com.nextdoor.nextdoor.domain.auth.filter.RedirectUrlCookieFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,6 +37,22 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain actuatorSecurity(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(EndpointRequest.toAnyEndpoint())
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
+                )
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(sess -> sess
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        ;
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(Customizer.withDefaults())
@@ -43,12 +61,6 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(httpRequest -> httpRequest
-                        .requestMatchers(
-                                "/actuator/prometheus",
-                                "/actuator/health",
-                                "/actuator/info"
-                        )
-                        .permitAll()
                         .requestMatchers(
                                 "/api/v1/auth"
                         )
