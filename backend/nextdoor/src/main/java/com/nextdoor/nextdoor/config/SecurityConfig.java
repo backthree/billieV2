@@ -5,10 +5,8 @@ import com.nextdoor.nextdoor.domain.auth.oauth2.OAuth2SuccessHandler;
 import com.nextdoor.nextdoor.domain.auth.filter.JwtAuthenticationFilter;
 import com.nextdoor.nextdoor.domain.auth.filter.RedirectUrlCookieFilter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -38,24 +36,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(1)
-    public SecurityFilterChain actuatorSecurity(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/actuator/**")
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
-                )
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(sess -> sess
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
-        ;
-        return http.build();
-    }
-
-    @Bean
-    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(Customizer.withDefaults())
@@ -64,22 +44,14 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(httpRequest -> httpRequest
-                        .requestMatchers(
-                                "/api/v1/auth"
-                        )
-                        .permitAll()
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/v1/posts"
-                        )
-                        .permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/api/v1/auth").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts").permitAll()
                         .requestMatchers(
                                 "/api/v1/posts/{postId}/like",
                                 "/api/v1/posts/liked"
-                        )
-                        .authenticated()
-                        .anyRequest()
-                        .authenticated())
+                        ).authenticated()
+                        .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .redirectionEndpoint(redirection -> redirection
                                 .baseUri("/api/v1/auth/oauth2/code/*"))
