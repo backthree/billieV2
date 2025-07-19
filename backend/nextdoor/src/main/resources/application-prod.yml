@@ -2,10 +2,12 @@ server:
   port: 8081
 
 management:
+  server:
+    port: 8082
   endpoints:
     web:
       exposure:
-        include: health, prometheus
+        include: health, info, prometheus
 
 spring:
   application:
