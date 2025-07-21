@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -26,57 +27,30 @@ public class PostIndexService {
   private final IndexLockService indexLockService;
 
   @Scheduled(cron = "0 0 3 * * *")
-  @Transactional(readOnly = true)
   public void reindexAll() {
-    if(!indexLockService.acquireFullIndexLock()){
+    if (!indexLockService.acquireFullIndexLock()) {
       throw new PostIndexException("이미 전체 인덱싱 중입니다.");
     }
 
-    try {
-      elasticSearchRepository.deleteAll();
+    elasticSearchRepository.deleteAll();
 
-      int page = 0;
-      long total = 0;
-      Page<Post> posts = Page.empty();
+    int page = 0;
+    Page<Post> posts;
+    do {
+      posts = postRepository.findAll(PageRequest.of(page++, BATCH_SIZE, Sort.by("id")));
+      indexBatch(posts.getContent());
+    } while (!posts.isLast());
 
-      do {
-        try {
-          posts = postRepository.findAll(
-                  PageRequest.of(page, BATCH_SIZE, Sort.by("id")));
+    indexLockService.releaseFullIndexLock();
+  }
 
-          if (posts.isEmpty()) {
-            break;
-          }
-
-          List<PostDocument> docs = posts.stream()
-                  .map(this::toDocument)
-                  .collect(Collectors.toList());
-
-          elasticSearchRepository.saveAll(docs);
-          total += docs.size();
-          log.info("  배치 {}: {} 건 색인", page, docs.size());
-          page++;
-        } catch (Exception e) {
-          log.error("  배치 {} 색인 중 오류: {}", page, e.getMessage(), e);
-        }
-      } while (posts != null && !posts.isEmpty() && !posts.isLast());
-
-      log.info("◀◀◀ 완료: 총 {} 건 색인", total);
-    } catch (Exception e) {
-      log.error("전체 색인 중 오류 발생: {}", e.getMessage(), e);
-    } finally {
-      try {
-        List<PostDocument> docs = indexLockService.processPendingIndexQueue();
-        if(docs.size() > 0){
-          elasticSearchRepository.saveAll(docs);
-          log.info("  배치 색인 완료: {} 건 색인", docs.size());
-        }
-      } catch (Exception e) {
-        log.error("배치 색인 중 오류 발생: {}", e.getMessage(), e);
-      } finally {
-        indexLockService.releaseFullIndexLock();
-      }
-    }
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void indexBatch(List<Post> batch) {
+    List<PostDocument> docs = batch.stream()
+            .map(this::toDocument)
+            .collect(Collectors.toList());
+    elasticSearchRepository.saveAll(docs);
+    log.info("  배치 색인: {} 건", docs.size());
   }
 
   @Transactional
