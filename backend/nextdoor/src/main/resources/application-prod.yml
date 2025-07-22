@@ -5,11 +5,11 @@ management:
   endpoints:
     web:
       exposure:
-        include:
-          - health
-          - info
-          - metrics
-          - prometheus
+        include: '*'
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 spring:
   application:
