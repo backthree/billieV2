@@ -36,6 +36,7 @@ jobs:
           context: ./backend/nextdoor
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:latest
+          no-cache: true
 
       - name: Make deployment package
         run: |
