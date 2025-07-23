@@ -37,6 +37,7 @@ jobs:
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:latest
           no-cache: true
+          pull: true
 
       - name: Make deployment package
         run: |
