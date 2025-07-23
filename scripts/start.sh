@@ -39,4 +39,4 @@ CLOUD_AWS_CREDENTIALS_SECRET-KEY=${AWS_SECRET_KEY_ID}
 EOF
 
 docker pull choijake/billie-app:latest
-docker compose up -d
+docker compose up -d --force-recreate --pull always
