@@ -4,7 +4,7 @@ WORKDIR /workspace
 
 COPY . .
 
-RUN chmod +x ./gradlew && ./gradlew bootJar
+RUN chmod +x ./gradlew && ./gradlew clean bootJar
 
 FROM eclipse-temurin:21-jre
 
