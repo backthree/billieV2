@@ -38,5 +38,8 @@ CLOUD_AWS_CREDENTIALS_ACCESS-KEY=${AWS_ACCESS_KEY_ID}
 CLOUD_AWS_CREDENTIALS_SECRET-KEY=${AWS_SECRET_KEY_ID}
 EOF
 
-docker pull choijake/billie-app:latest
-docker compose up -d --force-recreate --pull always
+aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 235969061926.dkr.ecr.ap-northeast-2.amazonaws.com
+
+docker pull 235969061926.dkr.ecr.ap-northeast-2.amazonaws.com/billie-app:latest
+
+docker compose up -d --force-recreate
