@@ -1,6 +1,6 @@
 services:
   app:
-    image: choijake/billie-app:latest
+    image: 235969061926.dkr.ecr.ap-northeast-2.amazonaws.com/billie-app:latest
     container_name: billie-spring-app
     network_mode: host
     env_file:
