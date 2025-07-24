@@ -1,9 +1,17 @@
 package com.nextdoor.nextdoor.domain.post.search;
 
-import java.time.Instant;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.*;
+import com.nextdoor.nextdoor.domain.post.domain.Post;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.GeoPointField;
+import org.springframework.data.elasticsearch.annotations.InnerField;
+import org.springframework.data.elasticsearch.annotations.MultiField;
+import org.springframework.data.elasticsearch.annotations.Setting;
+
+import java.time.Instant;
 
 @Setting(settingPath = "/elasticsearch-settings.json")
 @Document(indexName = "posts")
@@ -19,17 +27,13 @@ public class PostDocument {
 
   @MultiField(
           mainField = @Field(type = FieldType.Text, analyzer = "nori"),
-          otherFields = {
-                  @InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)
-          }
+          otherFields = {@InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)}
   )
   private String title;
 
   @MultiField(
           mainField = @Field(type = FieldType.Text, analyzer = "nori"),
-          otherFields = {
-                  @InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)
-          }
+          otherFields = {@InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)}
   )
   private String content;
 
@@ -41,22 +45,12 @@ public class PostDocument {
 
   @MultiField(
           mainField = @Field(type = FieldType.Text, analyzer = "nori"),
-          otherFields = {
-                  @InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)
-          }
+          otherFields = {@InnerField(suffix = "keyword", type = FieldType.Keyword, ignoreAbove = 256)}
   )
   private String address;
 
   @GeoPointField
   private GeoPoint location;
-
-  @Data
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public static class GeoPoint {
-    private Double lat;
-    private Double lon;
-  }
 
   @Field(type = FieldType.Keyword)
   private String category;
@@ -70,6 +64,29 @@ public class PostDocument {
   @Field(type = FieldType.Date)
   private Instant createdAt;
 
-  @Field(type = FieldType.Long)
-  private Long version;
+  public void copyFrom(Post post) {
+    this.id = post.getId();
+    this.title = post.getTitle();
+    this.content = post.getContent();
+    this.rentalFee = post.getRentalFee();
+    this.deposit = post.getDeposit();
+    this.address = post.getAddress();
+    if (post.getLatitude() != null && post.getLongitude() != null) {
+      this.location = new GeoPoint(post.getLatitude(), post.getLongitude());
+    } else {
+      this.location = null;
+    }
+    this.category = post.getCategory() != null ? post.getCategory().name() : null;
+    this.authorId = post.getAuthorId();
+    this.likeCount = post.getLikeCount();
+    this.createdAt = Instant.from(post.getCreatedAt());
+  }
+
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class GeoPoint {
+    private Double lat;
+    private Double lon;
+  }
 }
