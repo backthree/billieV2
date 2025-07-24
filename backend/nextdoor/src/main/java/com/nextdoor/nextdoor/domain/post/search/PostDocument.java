@@ -12,6 +12,8 @@ import org.springframework.data.elasticsearch.annotations.MultiField;
 import org.springframework.data.elasticsearch.annotations.Setting;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Setting(settingPath = "/elasticsearch-settings.json")
 @Document(indexName = "posts")
@@ -79,7 +81,12 @@ public class PostDocument {
     this.category = post.getCategory() != null ? post.getCategory().name() : null;
     this.authorId = post.getAuthorId();
     this.likeCount = post.getLikeCount();
-    this.createdAt = Instant.from(post.getCreatedAt());
+    LocalDateTime ldt = post.getCreatedAt();
+    if (ldt != null) {
+      this.createdAt = ldt
+              .atZone(ZoneId.systemDefault())
+              .toInstant();
+    }
   }
 
   @Data
