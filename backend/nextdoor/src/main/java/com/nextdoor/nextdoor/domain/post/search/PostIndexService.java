@@ -36,11 +36,11 @@ public class PostIndexService {
   private final ExecutorService executor = Executors.newFixedThreadPool(2);
 
   @Scheduled(cron = "0 0 3 * * *")
-  @Transactional(readOnly = true)
   public void reindexAll() {
     if (!indexLockService.acquireFullIndexLock()) {
       throw new PostIndexException("이미 전체 인덱싱 중입니다.");
     }
+
     try {
       esClient.deleteByQuery(d -> d
               .index("posts")
@@ -51,15 +51,27 @@ public class PostIndexService {
       List<Future<?>> futures = new ArrayList<>();
 
       while (true) {
-        var batch = findBatchPost(lastId);
+        List<Post> batch = findBatchPost(lastId);
         if (batch.isEmpty()) break;
 
-        List<Post> batchCopy = new ArrayList<>(batch);
-        futures.add(
-                executor.submit(() -> indexBatch(batchCopy))
-        );
+        List<BulkOperation> ops = new ArrayList<>(batch.size());
+        for (Post post : batch) {
+          PostDocument doc = toDocument(post);
+          ops.add(
+                  BulkOperation.of(b -> b
+                          .index(idx -> idx
+                                  .index("posts")
+                                  .id(post.getId().toString())
+                                  .document(doc)
+                          )
+                  )
+          );
+        }
+
+        futures.add(executor.submit(() -> bulkIndex(ops)));
         lastId = batch.get(batch.size() - 1).getId();
       }
+
       for (Future<?> f : futures) {
         f.get();
       }
@@ -78,22 +90,8 @@ public class PostIndexService {
     );
   }
 
-  private void indexBatch(List<Post> posts) {
+  private void bulkIndex(List<BulkOperation> operations) {
     try {
-      var operations = new ArrayList<BulkOperation>(posts.size());
-      for (Post post : posts) {
-        PostDocument doc = new PostDocument();
-        doc.copyFrom(post);
-        operations.add(
-                BulkOperation.of(b -> b
-                        .index(idx -> idx
-                                .index("posts")
-                                .id(post.getId().toString())
-                                .document(doc)
-                        )
-                )
-        );
-      }
       BulkRequest bulkRequest = BulkRequest.of(b -> b.operations(operations));
       BulkResponse response = esClient.bulk(bulkRequest);
 
@@ -105,7 +103,7 @@ public class PostIndexService {
                         .toList()
         );
       } else {
-        log.info("Indexed batch of {} documents", posts.size());
+        log.info("Indexed {} documents", operations.size());
       }
     } catch (IOException e) {
       log.error("Bulk 실행 중 IOException", e);
@@ -119,12 +117,12 @@ public class PostIndexService {
 
     PostDocument doc = toDocument(post);
 
-    if(indexLockService.isFullIndexLocked()){
+    if (indexLockService.isFullIndexLocked()) {
       indexLockService.addToPendingIndexQueue(doc);
       throw new PostIndexException("이미 전체 인덱싱 중입니다. 배치 색인을 기다려주세요.");
     } else {
       elasticSearchRepository.save(doc);
-      log.info("  단건 색인 완료: {} 건 색인", doc.getId());
+      log.info("단건 색인 완료: {}", doc.getId());
     }
   }
 
@@ -133,16 +131,15 @@ public class PostIndexService {
     Post post = postRepository.findById(postId)
             .orElseThrow(() -> new PostIndexException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
 
-    if(indexLockService.isFullIndexLocked()){
+    if (indexLockService.isFullIndexLocked()) {
       throw new PostIndexException("이미 전체 인덱싱 중입니다.");
     }
 
     elasticSearchRepository.deleteById(post.getId());
-    log.info("  단건 삭제 완료: {} 건 색인", post.getId());
+    log.info("단건 삭제 완료: {}", post.getId());
   }
 
   private PostDocument toDocument(Post p) {
-
     return PostDocument.builder()
             .id(p.getId())
             .title(p.getTitle())
