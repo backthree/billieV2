@@ -64,30 +64,30 @@ public class PostDocument {
   private Integer likeCount;
 
   @Field(type = FieldType.Date)
-  private Instant createdAt;
+  private LocalDateTime createdAt;
 
-  public void copyFrom(Post post) {
-    this.id = post.getId();
-    this.title = post.getTitle();
-    this.content = post.getContent();
-    this.rentalFee = post.getRentalFee();
-    this.deposit = post.getDeposit();
-    this.address = post.getAddress();
-    if (post.getLatitude() != null && post.getLongitude() != null) {
-      this.location = new GeoPoint(post.getLatitude(), post.getLongitude());
-    } else {
-      this.location = null;
-    }
-    this.category = post.getCategory() != null ? post.getCategory().name() : null;
-    this.authorId = post.getAuthorId();
-    this.likeCount = post.getLikeCount();
-    LocalDateTime ldt = post.getCreatedAt();
-    if (ldt != null) {
-      this.createdAt = ldt
-              .atZone(ZoneId.systemDefault())
-              .toInstant();
-    }
-  }
+//  public void copyFrom(Post post) {
+//    this.id = post.getId();
+//    this.title = post.getTitle();
+//    this.content = post.getContent();
+//    this.rentalFee = post.getRentalFee();
+//    this.deposit = post.getDeposit();
+//    this.address = post.getAddress();
+//    if (post.getLatitude() != null && post.getLongitude() != null) {
+//      this.location = new GeoPoint(post.getLatitude(), post.getLongitude());
+//    } else {
+//      this.location = null;
+//    }
+//    this.category = post.getCategory() != null ? post.getCategory().name() : null;
+//    this.authorId = post.getAuthorId();
+//    this.likeCount = post.getLikeCount();
+//    LocalDateTime ldt = post.getCreatedAt();
+//    if (ldt != null) {
+//      this.createdAt = ldt
+//              .atZone(ZoneId.systemDefault())
+//              .toInstant();
+//    }
+//  }
 
   @Data
   @NoArgsConstructor

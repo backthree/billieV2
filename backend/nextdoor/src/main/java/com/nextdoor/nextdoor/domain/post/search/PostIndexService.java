@@ -161,7 +161,7 @@ public class PostIndexService {
             .category(p.getCategory().name())
             .authorId(p.getAuthorId())
             .likeCount(p.getLikeCount())
-            .createdAt(p.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+            .createdAt(p.getCreatedAt())
             .build();
   }
 }
