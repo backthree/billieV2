@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ public class PostIndexService {
   private final ExecutorService executor = Executors.newFixedThreadPool(2);
 
   @Scheduled(cron = "0 0 3 * * *")
+  @Transactional(readOnly = true)
   public void reindexAll() {
     if (!indexLockService.acquireFullIndexLock()) {
       throw new PostIndexException("이미 전체 인덱싱 중입니다.");
@@ -49,10 +51,7 @@ public class PostIndexService {
       List<Future<?>> futures = new ArrayList<>();
 
       while (true) {
-        var batch = postRepository.findPostsAfter(
-                lastId,
-                PageRequest.of(0, BATCH_SIZE, Sort.by("id"))
-        );
+        var batch = findBatchPost(lastId);
         if (batch.isEmpty()) break;
 
         List<Post> batchCopy = new ArrayList<>(batch);
@@ -69,6 +68,14 @@ public class PostIndexService {
     } finally {
       indexLockService.releaseFullIndexLock();
     }
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+  public List<Post> findBatchPost(long lastId) {
+    return postRepository.findPostsAfter(
+            lastId,
+            PageRequest.of(0, BATCH_SIZE, Sort.by("id"))
+    );
   }
 
   private void indexBatch(List<Post> posts) {
@@ -105,7 +112,7 @@ public class PostIndexService {
     }
   }
 
-@Transactional
+  @Transactional
   public void indexSinglePost(Long postId) {
     Post post = postRepository.findById(postId)
             .orElseThrow(() -> new PostIndexException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
