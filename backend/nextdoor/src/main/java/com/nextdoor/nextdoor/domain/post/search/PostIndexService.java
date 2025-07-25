@@ -3,7 +3,6 @@ package com.nextdoor.nextdoor.domain.post.search;
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
-import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import com.nextdoor.nextdoor.domain.post.domain.Post;
 import com.nextdoor.nextdoor.domain.post.exception.PostIndexException;
@@ -26,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class PostIndexService {
 
-  private static final int BATCH_SIZE = 500;
+  private static final int BATCH_SIZE = 1000;
   private static final int MAX_IN_FLIGHT_TASKS = 2;
 
   private final PostRepository postRepository;
