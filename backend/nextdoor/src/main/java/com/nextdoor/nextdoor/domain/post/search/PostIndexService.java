@@ -1,9 +1,12 @@
 package com.nextdoor.nextdoor.domain.post.search;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import com.nextdoor.nextdoor.domain.post.domain.Post;
 import com.nextdoor.nextdoor.domain.post.exception.PostIndexException;
 import com.nextdoor.nextdoor.domain.post.repository.PostRepository;
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -12,82 +15,97 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayDeque;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PostIndexService {
-  private static final int BATCH_SIZE = 500;
 
+  private static final int BATCH_SIZE = 1000;
   private final PostRepository postRepository;
-  private final PostSearchRepository elasticSearchRepository;
+  private final ElasticsearchClient esClient;
   private final IndexLockService indexLockService;
-  private final MeterRegistry registry;
-  private final ThreadLocal<Deque<PostDocument>> docPool =
-          ThreadLocal.withInitial(ArrayDeque::new);
-  private final ThreadLocal<ArrayList<PostDocument>> docsList =
-          ThreadLocal.withInitial(() -> new ArrayList<>(BATCH_SIZE));
+  private final PostSearchRepository elasticSearchRepository;
+  private final ExecutorService executor = Executors.newFixedThreadPool(2);
 
   @Scheduled(cron = "0 0 3 * * *")
   public void reindexAll() {
     if (!indexLockService.acquireFullIndexLock()) {
       throw new PostIndexException("이미 전체 인덱싱 중입니다.");
     }
-
     try {
-      elasticSearchRepository.deleteAll();
+      esClient.deleteByQuery(d -> d
+              .index("posts")
+              .query(q -> q.matchAll(m -> m))
+      );
 
       long lastId = 0L;
-      int batchNo = 0;
+      List<Future<?>> futures = new ArrayList<>();
 
       while (true) {
-        List<Post> batch = postRepository.findPostsAfter(
+        var batch = postRepository.findPostsAfter(
                 lastId,
                 PageRequest.of(0, BATCH_SIZE, Sort.by("id"))
         );
         if (batch.isEmpty()) break;
 
-        indexBatch(batch, batchNo++);
+        List<Post> batchCopy = new ArrayList<>(batch);
+        futures.add(
+                executor.submit(() -> indexBatch(batchCopy))
+        );
         lastId = batch.get(batch.size() - 1).getId();
       }
+      for (Future<?> f : futures) {
+        f.get();
+      }
+    } catch (Exception e) {
+      throw new PostIndexException("전체 인덱싱 중 오류", e);
     } finally {
       indexLockService.releaseFullIndexLock();
     }
   }
 
-  public void indexBatch(List<Post> batch, int batchNo) {
-    Deque<PostDocument> pool = docPool.get();
-    ArrayList<PostDocument> docs = docsList.get();
-
-    docs.clear();
-    docs.ensureCapacity(batch.size());
-
-    for (Post post : batch) {
-      PostDocument doc;
-      if (pool.isEmpty()) {
-        doc = new PostDocument();
-      } else {
-        doc = pool.pop();
+  private void indexBatch(List<Post> posts) {
+    try {
+      var operations = new ArrayList<BulkOperation>(posts.size());
+      for (Post post : posts) {
+        PostDocument doc = new PostDocument();
+        doc.copyFrom(post);
+        operations.add(
+                BulkOperation.of(b -> b
+                        .index(idx -> idx
+                                .index("posts")
+                                .id(post.getId().toString())
+                                .document(doc)
+                        )
+                )
+        );
       }
-      doc.copyFrom(post);
-      docs.add(doc);
+      BulkRequest bulkRequest = BulkRequest.of(b -> b.operations(operations));
+      BulkResponse response = esClient.bulk(bulkRequest);
+
+      if (response.errors()) {
+        log.error("Bulk 색인 오류: {}",
+                response.items().stream()
+                        .filter(item -> item.error() != null)
+                        .map(item -> item.error().reason())
+                        .toList()
+        );
+      } else {
+        log.info("Indexed batch of {} documents", posts.size());
+      }
+    } catch (IOException e) {
+      log.error("Bulk 실행 중 IOException", e);
     }
-
-    elasticSearchRepository.saveAll(docs);
-
-    registry.counter("post.index.batch.success",
-                    "batchNo", String.valueOf(batchNo))
-            .increment(docs.size());
-    log.info("[Index][batch:{}][size:{}] 성공", batchNo, docs.size());
-
-    pool.addAll(docs);
   }
 
-  @Transactional
+@Transactional
   public void indexSinglePost(Long postId) {
     Post post = postRepository.findById(postId)
             .orElseThrow(() -> new PostIndexException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
