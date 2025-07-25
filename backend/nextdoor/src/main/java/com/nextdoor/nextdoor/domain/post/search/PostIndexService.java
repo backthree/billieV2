@@ -28,12 +28,14 @@ import java.util.concurrent.Future;
 @Slf4j
 public class PostIndexService {
 
-  private static final int BATCH_SIZE = 1000;
+  private static final int BATCH_SIZE = 500;
+  private static final int MAX_IN_FLIGHT_TASKS = 2;
+
   private final PostRepository postRepository;
   private final ElasticsearchClient esClient;
   private final IndexLockService indexLockService;
   private final PostSearchRepository elasticSearchRepository;
-  private final ExecutorService executor = Executors.newFixedThreadPool(2);
+  private final ExecutorService executor = Executors.newFixedThreadPool(MAX_IN_FLIGHT_TASKS);
 
   @Scheduled(cron = "0 0 3 * * *")
   public void reindexAll() {
@@ -70,10 +72,19 @@ public class PostIndexService {
 
         futures.add(executor.submit(() -> bulkIndex(ops)));
         lastId = batch.get(batch.size() - 1).getId();
+
+        if (futures.size() >= MAX_IN_FLIGHT_TASKS) {
+          Future<?> f = futures.remove(0);
+          try { f.get(); } catch (Exception e) {
+            log.error("Bulk 태스크 중 예외 발생", e);
+          }
+        }
       }
 
       for (Future<?> f : futures) {
-        f.get();
+        try { f.get(); } catch (Exception e) {
+          log.error("Bulk 태스크 중 예외 발생", e);
+        }
       }
     } catch (Exception e) {
       throw new PostIndexException("전체 인덱싱 중 오류", e);
