@@ -69,6 +69,9 @@ dependencies {
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'org.elasticsearch.client:elasticsearch-rest-client:9.0.3'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'co.elastic.clients:elasticsearch-java:8.11.0'
+	implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
 }
 
 tasks.named('test') {

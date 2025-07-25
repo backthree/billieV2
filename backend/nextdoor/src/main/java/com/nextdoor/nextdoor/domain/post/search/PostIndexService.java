@@ -1,5 +1,6 @@
 package com.nextdoor.nextdoor.domain.post.search;
 
+import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
@@ -16,12 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -33,9 +31,9 @@ public class PostIndexService {
 
   private final PostRepository postRepository;
   private final ElasticsearchClient esClient;
+  private final ElasticsearchAsyncClient asyncEsClient;
   private final IndexLockService indexLockService;
   private final PostSearchRepository elasticSearchRepository;
-  private final ExecutorService executor = Executors.newFixedThreadPool(MAX_IN_FLIGHT_TASKS);
 
   @Scheduled(cron = "0 0 3 * * *")
   public void reindexAll() {
@@ -50,7 +48,7 @@ public class PostIndexService {
       );
 
       long lastId = 0L;
-      List<Future<?>> futures = new ArrayList<>();
+      List<CompletableFuture<Void>> futures = new ArrayList<>();
 
       while (true) {
         List<Post> batch = findBatchPost(lastId);
@@ -70,27 +68,45 @@ public class PostIndexService {
           );
         }
 
-        futures.add(executor.submit(() -> bulkIndex(ops)));
+        futures.add(bulkIndexAsync(ops));
         lastId = batch.get(batch.size() - 1).getId();
 
         if (futures.size() >= MAX_IN_FLIGHT_TASKS) {
-          Future<?> f = futures.remove(0);
-          try { f.get(); } catch (Exception e) {
-            log.error("Bulk 태스크 중 예외 발생", e);
-          }
+          CompletableFuture<Void> completedFuture = futures.remove(0);
+          completedFuture.join();
         }
       }
 
-      for (Future<?> f : futures) {
-        try { f.get(); } catch (Exception e) {
-          log.error("Bulk 태스크 중 예외 발생", e);
-        }
-      }
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      log.info("전체 인덱싱 완료");
+
     } catch (Exception e) {
       throw new PostIndexException("전체 인덱싱 중 오류", e);
     } finally {
       indexLockService.releaseFullIndexLock();
     }
+  }
+
+  private CompletableFuture<Void> bulkIndexAsync(List<BulkOperation> operations) {
+    BulkRequest bulkRequest = BulkRequest.of(b -> b.operations(operations));
+
+    return asyncEsClient.bulk(bulkRequest)
+            .thenAccept(response -> {
+              if (response.errors()) {
+                log.error("Bulk 색인 오류: {}",
+                        response.items().stream()
+                                .filter(item -> item.error() != null)
+                                .map(item -> item.error().reason())
+                                .toList()
+                );
+              } else {
+                log.info("Indexed {} documents", operations.size());
+              }
+            })
+            .exceptionally(throwable -> {
+              log.error("Bulk 실행 중 예외 발생", throwable);
+              return null;
+            });
   }
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
@@ -99,26 +115,6 @@ public class PostIndexService {
             lastId,
             PageRequest.of(0, BATCH_SIZE, Sort.by("id"))
     );
-  }
-
-  private void bulkIndex(List<BulkOperation> operations) {
-    try {
-      BulkRequest bulkRequest = BulkRequest.of(b -> b.operations(operations));
-      BulkResponse response = esClient.bulk(bulkRequest);
-
-      if (response.errors()) {
-        log.error("Bulk 색인 오류: {}",
-                response.items().stream()
-                        .filter(item -> item.error() != null)
-                        .map(item -> item.error().reason())
-                        .toList()
-        );
-      } else {
-        log.info("Indexed {} documents", operations.size());
-      }
-    } catch (IOException e) {
-      log.error("Bulk 실행 중 IOException", e);
-    }
   }
 
   @Transactional
