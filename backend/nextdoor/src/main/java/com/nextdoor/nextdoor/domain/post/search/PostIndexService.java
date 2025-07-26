@@ -9,11 +9,8 @@ import com.nextdoor.nextdoor.domain.post.exception.PostIndexException;
 import com.nextdoor.nextdoor.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -25,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class PostIndexService {
 
-  private static final int BATCH_SIZE = 1000;
   private static final int MAX_IN_FLIGHT_TASKS = 2;
 
   private final PostRepository postRepository;
@@ -33,6 +29,7 @@ public class PostIndexService {
   private final ElasticsearchAsyncClient asyncEsClient;
   private final IndexLockService indexLockService;
   private final PostSearchRepository elasticSearchRepository;
+  private final PostBatchReader postBatchReader;
 
   @Scheduled(cron = "0 0 3 * * *")
   public void reindexAll() {
@@ -50,7 +47,7 @@ public class PostIndexService {
       List<CompletableFuture<Void>> futures = new ArrayList<>();
 
       while (true) {
-        List<Post> batch = findBatchPost(lastId);
+        List<Post> batch = postBatchReader.findBatchPost(lastId);
         if (batch.isEmpty()) break;
 
         List<BulkOperation> ops = new ArrayList<>(batch.size());
@@ -106,14 +103,6 @@ public class PostIndexService {
               log.error("Bulk 실행 중 예외 발생", throwable);
               return null;
             });
-  }
-
-  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
-  public List<Post> findBatchPost(long lastId) {
-    return postRepository.findPostsAfter(
-            lastId,
-            PageRequest.of(0, BATCH_SIZE, Sort.by("id"))
-    );
   }
 
   @Transactional
