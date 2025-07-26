@@ -16,7 +16,7 @@ import java.util.List;
 public class PostBatchReader {
 
     private final PostRepository postRepository;
-    private static final int BATCH_SIZE = 1000;
+    private static final int BATCH_SIZE = 500;
 
     @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     public List<Post> findBatchPost(long lastId) {
