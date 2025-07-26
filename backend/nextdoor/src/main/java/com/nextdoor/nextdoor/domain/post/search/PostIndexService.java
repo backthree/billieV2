@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class PostIndexService {
 
-  private static final int BATCH_SIZE = 1000;
+  private static final int BATCH_SIZE = 2000;
   private static final int MAX_IN_FLIGHT_TASKS = 2;
 
   private final PostRepository postRepository;
