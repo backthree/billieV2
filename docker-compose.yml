@@ -6,9 +6,13 @@ services:
     env_file:
       - .env
     restart: always
+    volumes:
+      - ./heapdumps:/heapdumps
     environment:
       JAVA_TOOL_OPTIONS: >
         -Xms2g -Xmx3g
         -XX:+UseG1GC
         -XX:MaxGCPauseMillis=200
         -XX:+PrintFlagsFinal
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/heapdumps
