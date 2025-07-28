@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostBatchReader {
 
-    private static final int BATCH_SIZE = 500;
+    private static final int BATCH_SIZE = 1000;
     private final PostRepository postRepository;
 
     @Transactional(readOnly = true)
