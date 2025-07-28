@@ -24,7 +24,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "ORDER BY p.id ASC")
     List<PostWithLikeCountDto> findPostsWithLikeCountByIds(@Param("ids") List<Long> ids);
 
-    @Query("SELECT new com.nextdoor.nextdoor.domain.post.dto.PostWithLikeCountDto(" +
+    @Query("SELECT new com.nextdoor.nextdoor.domain.post.search.dto.PostWithLikeCountDto(" +
             "p.id, p.title, p.content, p.rentalFee, p.deposit, " +
             "p.address, p.latitude, p.longitude, p.category, " +
             "p.createdAt, plc.likeCount) " +
