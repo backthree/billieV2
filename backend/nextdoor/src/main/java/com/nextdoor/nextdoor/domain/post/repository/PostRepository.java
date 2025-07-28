@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    @Query("SELECT p FROM Post p WHERE p.id > :lastId ORDER BY p.id ASC")
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.likes WHERE p.id > :lastId ORDER BY p.id ASC")
     List<Post> findPostsAfter(
             @Param("lastId") Long lastId,
             Pageable pageable
