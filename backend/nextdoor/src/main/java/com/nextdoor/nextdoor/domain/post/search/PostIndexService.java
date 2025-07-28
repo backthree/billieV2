@@ -7,6 +7,8 @@ import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import com.nextdoor.nextdoor.domain.post.domain.Post;
 import com.nextdoor.nextdoor.domain.post.exception.PostIndexException;
 import com.nextdoor.nextdoor.domain.post.repository.PostRepository;
+import com.nextdoor.nextdoor.domain.post.search.dto.PostBatchResult;
+import com.nextdoor.nextdoor.domain.post.search.dto.PostWithLikeCountDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,38 +40,35 @@ public class PostIndexService {
     }
 
     try {
-      esClient.deleteByQuery(d -> d
-              .index("posts")
-              .query(q -> q.matchAll(m -> m))
-      );
+      esClient.deleteByQuery(d -> d.index("posts").query(q -> q.matchAll(m -> m)));
 
       long lastId = 0L;
       List<CompletableFuture<Void>> futures = new ArrayList<>();
 
       while (true) {
-        List<Post> batch = postBatchReader.findBatchPost(lastId);
-        if (batch.isEmpty()) break;
+        PostBatchResult result = postBatchReader.findNextBatch(lastId);
+        List<PostWithLikeCountDto> postDtos = result.getPosts();
 
-        List<BulkOperation> ops = new ArrayList<>(batch.size());
-        for (Post post : batch) {
-          PostDocument doc = toDocument(post);
+        if (postDtos.isEmpty()) {
+          break;
+        }
+
+        List<BulkOperation> ops = new ArrayList<>(postDtos.size());
+        for (PostWithLikeCountDto dto : postDtos) {
+          PostDocument doc = toDocument(dto);
           ops.add(
                   BulkOperation.of(b -> b
                           .index(idx -> idx
                                   .index("posts")
-                                  .id(post.getId().toString())
-                                  .document(doc)
-                          )
-                  )
-          );
+                                  .id(dto.getPostId().toString())
+                                  .document(doc))));
         }
 
         futures.add(bulkIndexAsync(ops));
-        lastId = batch.get(batch.size() - 1).getId();
+        lastId = result.getLastId();
 
         if (futures.size() >= MAX_IN_FLIGHT_TASKS) {
-          CompletableFuture<Void> completedFuture = futures.remove(0);
-          completedFuture.join();
+          futures.remove(0).join();
         }
       }
 
@@ -85,16 +84,12 @@ public class PostIndexService {
 
   private CompletableFuture<Void> bulkIndexAsync(List<BulkOperation> operations) {
     BulkRequest bulkRequest = BulkRequest.of(b -> b.operations(operations));
-
     return asyncEsClient.bulk(bulkRequest)
             .thenAccept(response -> {
               if (response.errors()) {
-                log.error("Bulk 색인 오류: {}",
-                        response.items().stream()
-                                .filter(item -> item.error() != null)
-                                .map(item -> item.error().reason())
-                                .toList()
-                );
+                log.error("Bulk 색인 오류: {}", response.items().stream()
+                        .filter(item -> item.error() != null)
+                        .map(item -> item.error().reason()).toList());
               } else {
                 log.info("Indexed {} documents", operations.size());
               }
@@ -105,12 +100,11 @@ public class PostIndexService {
             });
   }
 
-  @Transactional
   public void indexSinglePost(Long postId) {
-    Post post = postRepository.findById(postId)
+    PostWithLikeCountDto dto = postRepository.findDtoById(postId)
             .orElseThrow(() -> new PostIndexException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
 
-    PostDocument doc = toDocument(post);
+    PostDocument doc = toDocument(dto);
 
     if (indexLockService.isFullIndexLocked()) {
       indexLockService.addToPendingIndexQueue(doc);
@@ -134,18 +128,23 @@ public class PostIndexService {
     log.info("단건 삭제 완료: {}", post.getId());
   }
 
-  private PostDocument toDocument(Post p) {
+  private PostDocument toDocument(PostWithLikeCountDto dto) {
+    PostDocument.GeoPoint location = null;
+    if (dto.getLatitude() != null && dto.getLongitude() != null) {
+      location = new PostDocument.GeoPoint(dto.getLatitude(), dto.getLongitude());
+    }
+
     return PostDocument.builder()
-            .id(p.getId())
-            .title(p.getTitle())
-            .content(p.getContent())
-            .rentalFee(p.getRentalFee())
-            .deposit(p.getDeposit())
-            .address(p.getAddress())
-            .category(p.getCategory().name())
-            .authorId(p.getAuthorId())
-            .likeCount(p.getLikeCount())
-            .createdAt(p.getCreatedAt())
+            .id(dto.getPostId())
+            .title(dto.getTitle())
+            .content(dto.getContent())
+            .rentalFee(dto.getRentalFee())
+            .deposit(dto.getDeposit())
+            .address(dto.getAddress())
+            .location(location)
+            .category(dto.getCategory() != null ? dto.getCategory().name() : null)
+            .likeCount(dto.getLikeCount().intValue())
+            .createdAt(dto.getCreatedAt())
             .build();
   }
 }
