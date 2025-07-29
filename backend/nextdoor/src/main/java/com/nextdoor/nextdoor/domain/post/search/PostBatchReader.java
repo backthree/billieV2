@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
@@ -20,7 +21,7 @@ public class PostBatchReader {
     private static final int BATCH_SIZE = 1000;
     private final PostRepository postRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
     public PostBatchResult findNextBatch(long lastId) {
         Pageable pageRequest = PageRequest.of(0, BATCH_SIZE);
         List<Long> postIds = postRepository.findPostIdsAfter(lastId, pageRequest);
