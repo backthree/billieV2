@@ -110,3 +110,8 @@ logging:
 
     org.apache.http: DEBUG
     org.elasticsearch.client.RestClient: DEBUG
+
+    org.hibernate.engine.internal.StatefulPersistenceContext: DEBUG
+    org.hibernate.event.internal.AbstractFlushingEventListener: DEBUG
+    org.hibernate.internal.SessionImpl: DEBUG
+    org.hibernate.engine.spi.ActionQueue: TRACE
