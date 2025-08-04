@@ -1,20 +1,22 @@
 package com.nextdoor.nextdoor.domain.chat.domain;
 
 import lombok.*;
-import org.springframework.data.cassandra.core.mapping.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
- * Cassandra Counter를 이용한 미확인 메시지 개수 집계용 엔티티
+ * MongoDB 컬렉션으로 전환된 UnreadCounter
  */
-@Table("unread_counters")
+@Document(collection = "unread_counters")
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class UnreadCounter {
-    @PrimaryKey
-    private UnreadCounterKey key;
+    @Id
+    private String id;          // 예: roomId + "_" + userId
 
-    @Column("unread_count")
+    private Long roomId;
+    private Long userId;
     private long unreadCount;
 }
