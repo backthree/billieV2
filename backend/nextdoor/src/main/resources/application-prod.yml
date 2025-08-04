@@ -1,20 +1,6 @@
-server:
-  port: 8081
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: '*'
-  prometheus:
-    metrics:
-      export:
-        enabled: true
-
 spring:
   application:
     name: nextdoor
-
   transaction:
     default-timeout: 100
   datasource:
@@ -36,7 +22,6 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
-
   data:
     redis:
       host: localhost
@@ -45,11 +30,8 @@ spring:
         enabled: true
     mongodb:
       uri: mongodb://localhost:27017/nextdoor_chat
-  rabbitmq:
-    addresses: localhost:5671
   elasticsearch:
     uris: http://localhost:9200
-
   security:
     oauth2:
       client:
@@ -71,6 +53,10 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
+
+sqs:
+  queue:
+    name: billie-indexer-queue
 
 custom:
   google:
@@ -96,22 +82,44 @@ cloud:
     s3:
       bucket: oneders
 
-elasticsearch:
-  index:
-    posts:
-      name: posts
-      alias: posts-alias
-
 logging:
   level:
     org.springframework.data.elasticsearch: DEBUG
     org.elasticsearch.client: DEBUG
     co.elastic.clients: DEBUG
-
     org.apache.http: DEBUG
     org.elasticsearch.client.RestClient: DEBUG
-
     org.hibernate.engine.internal.StatefulPersistenceContext: DEBUG
     org.hibernate.event.internal.AbstractFlushingEventListener: DEBUG
     org.hibernate.internal.SessionImpl: DEBUG
     org.hibernate.engine.spi.ActionQueue: TRACE
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: "api"
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: "worker"
+  
+  main:
+    web-application-type: none
