@@ -19,7 +19,12 @@ public class SqsMessageListener {
     private String queueName;
 
     @SqsListener("${sqs.queue.name}")
-    public void receiveMessage(String message) throws Exception {
-        messageConsumer.processMessage(message);
+    public void receiveMessage(String message) {
+        try {
+            log.info("수신된 메시지: {}", message);
+            messageConsumer.processMessage(message);
+        } catch (Exception e) {
+            log.error(" 메시지 처리 중 예외 발생: {}", message, e);
+        }
     }
 }
