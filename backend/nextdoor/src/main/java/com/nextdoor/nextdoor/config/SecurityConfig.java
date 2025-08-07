@@ -39,23 +39,24 @@ public class SecurityConfig {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
+                .formLogin(formLogin -> formLogin.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(httpRequest -> httpRequest
                         .requestMatchers(
-                                "/api/v1/auth"
-                        )
+                                "/api/v1/auth",
+                                "/social-login",
+                                "/social-login.html")
                         .permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/v1/posts"
-                        )
+                                "/api/v1/posts",
+                                "/api/v1/posts/*/like")
                         .permitAll()
                         .requestMatchers(
-                                "/api/v1/posts/{postId}/like",
-                                "/api/v1/posts/liked"
-                        )
+                                "/api/v1/posts/*/like",
+                                "/api/v1/posts/liked")
                         .authenticated()
                         .anyRequest()
                         .authenticated())
