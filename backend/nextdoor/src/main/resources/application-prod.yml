@@ -56,8 +56,9 @@ spring:
 
 sqs:
   queue:
-    name: billie-indexer-queue
-
+    create-delete: billie-post-create-delete-queue
+    update: billie-post-update-queue
+    reindex: billie-reindex-queue
 custom:
   google:
     ai:
@@ -84,15 +85,8 @@ cloud:
 
 logging:
   level:
-    org.springframework.data.elasticsearch: DEBUG
-    org.elasticsearch.client: DEBUG
-    co.elastic.clients: DEBUG
-    org.apache.http: DEBUG
-    org.elasticsearch.client.RestClient: DEBUG
-    org.hibernate.engine.internal.StatefulPersistenceContext: DEBUG
-    org.hibernate.event.internal.AbstractFlushingEventListener: DEBUG
-    org.hibernate.internal.SessionImpl: DEBUG
-    org.hibernate.engine.spi.ActionQueue: TRACE
+    root: ERROR
+    com.nextdoor.nextdoor.domain.post.search: WARN
 
 ---
 
@@ -120,6 +114,6 @@ spring:
   config:
     activate:
       on-profile: "worker"
-  
+
   main:
     web-application-type: none
