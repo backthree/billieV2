@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
+import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,20 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
                 .connectedTo(elasticsearchUri);
 
         return builder.build();
+    }
+
+    @Bean
+    public RestClient restClient() {
+        String[] hostPort = elasticsearchUri.split(":");
+        String host = hostPort[0];
+        int port = hostPort.length > 1 ? Integer.parseInt(hostPort[1]) : 9200;
+
+        return RestClient.builder(new HttpHost(host, port))
+                .setRequestConfigCallback(requestConfigBuilder ->
+                        requestConfigBuilder
+                                .setConnectTimeout(5_000)
+                                .setSocketTimeout(120_000)
+                ).build();
     }
 
     @Bean
