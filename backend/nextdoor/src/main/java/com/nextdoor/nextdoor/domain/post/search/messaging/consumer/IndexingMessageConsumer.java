@@ -3,10 +3,8 @@ package com.nextdoor.nextdoor.domain.post.search.messaging.consumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nextdoor.nextdoor.domain.post.exception.PostIndexException;
 import com.nextdoor.nextdoor.domain.post.repository.PostRepository;
-import com.nextdoor.nextdoor.domain.post.search.IndexLockService;
-import com.nextdoor.nextdoor.domain.post.search.PostBatchReader;
-import com.nextdoor.nextdoor.domain.post.search.PostDocument;
-import com.nextdoor.nextdoor.domain.post.search.PostSearchRepository;
+import com.nextdoor.nextdoor.domain.post.search.*;
+import com.nextdoor.nextdoor.domain.post.search.dto.BatchTask;
 import com.nextdoor.nextdoor.domain.post.search.dto.PostBatchResult;
 import com.nextdoor.nextdoor.domain.post.search.dto.PostWithLikeCountDto;
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
@@ -19,9 +17,12 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -39,6 +40,8 @@ public class IndexingMessageConsumer implements MessageConsumer {
     private final PostSearchRepository elasticSearchRepository;
     private final PostBatchReader postBatchReader;
     private final ObjectMapper objectMapper;
+    private final ReindexRunStore runStore;
+    private final IndexAliasManager indexAliasManager;
 
     @Override
     public void processMessage(String payload) throws Exception {
@@ -67,11 +70,22 @@ public class IndexingMessageConsumer implements MessageConsumer {
         try {
             esClient.deleteByQuery(d -> d.index("posts").query(q -> q.matchAll(m -> m)));
 
-            long lastId = 0L;
-            List<CompletableFuture<Void>> futures = new ArrayList<>();
+            Optional<ReindexRunState> runState = runStore.get()
+                    .filter(s -> s.getStatus() == ReindexRunState.Status.RUNNING);
+
+            ReindexRunState state = runState.orElseGet(() -> {
+                LocalDateTime dbNow = postRepository.currentTimestamp();
+                return runStore.begin(dbNow.atZone(ZoneId.systemDefault()).toInstant());
+            });
+
+            long lastId = state.getLastId();
+            long processed = state.getProcessed();
+            LocalDateTime cutoff = LocalDateTime.ofInstant(state.getCutoff(), ZoneId.systemDefault());
+
+            List<BatchTask> inFlight = new ArrayList<>(MAX_IN_FLIGHT_TASKS);
 
             while (true) {
-                PostBatchResult result = postBatchReader.findNextBatch(lastId);
+                PostBatchResult result = postBatchReader.findNextBatch(lastId, cutoff);
                 List<PostWithLikeCountDto> postDtos = result.getPosts();
 
                 if (postDtos.isEmpty()) {
@@ -89,17 +103,27 @@ public class IndexingMessageConsumer implements MessageConsumer {
                                             .document(doc))));
                 }
 
-                futures.add(bulkIndexAsync(ops));
+                CompletableFuture<Void> f = bulkIndexAsync(ops);
+                inFlight.add(new BatchTask(f, result.getLastId(), postDtos.size()));
                 lastId = result.getLastId();
 
-                if (futures.size() >= MAX_IN_FLIGHT_TASKS) {
-                    futures.remove(0).join();
+                if (inFlight.size() >= MAX_IN_FLIGHT_TASKS) {
+                    BatchTask done = inFlight.remove(0);
+                    done.future().join();
+                    processed += done.count();
+                    runStore.checkpoint(done.lastId(), processed);
                 }
             }
 
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-            log.info("전체 인덱싱 완료");
+            while (!inFlight.isEmpty()) {
+                BatchTask done = inFlight.remove(0);
+                done.future().join();
+                processed += done.count();
+                runStore.checkpoint(done.lastId(), processed);
+            }
 
+            runStore.complete();
+            log.info("전체 인덱싱 완료");
         } catch (Exception e) {
             throw new PostIndexException("전체 인덱싱 중 오류", e);
         } finally {
