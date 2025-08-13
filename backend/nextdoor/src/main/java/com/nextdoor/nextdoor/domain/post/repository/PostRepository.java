@@ -31,7 +31,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT new com.nextdoor.nextdoor.domain.post.search.dto.PostWithLikeCountDto(" +
             "p.id, p.title, p.content, p.rentalFee, p.deposit, " +
             "p.address, p.latitude, p.longitude, p.category, " +
-            "p.createdAt, plc.likeCount) " +
+            "p.createdAt, p.updatedAt, plc.likeCount) " +
             "FROM Post p " +
             "LEFT JOIN PostLikeCount plc ON p.id = plc.postId " +
             "WHERE p.id IN :ids " +
@@ -41,7 +41,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT new com.nextdoor.nextdoor.domain.post.search.dto.PostWithLikeCountDto(" +
             "p.id, p.title, p.content, p.rentalFee, p.deposit, " +
             "p.address, p.latitude, p.longitude, p.category, " +
-            "p.createdAt, plc.likeCount) " +
+            "p.createdAt, p.updatedAt, plc.likeCount) " +
             "FROM Post p " +
             "LEFT JOIN PostLikeCount plc ON p.id = plc.postId " +
             "WHERE p.id = :postId")

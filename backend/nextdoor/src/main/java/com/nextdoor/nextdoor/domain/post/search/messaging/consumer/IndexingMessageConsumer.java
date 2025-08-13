@@ -1,5 +1,9 @@
 package com.nextdoor.nextdoor.domain.post.search.messaging.consumer;
 
+import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
+import co.elastic.clients.elasticsearch._types.VersionType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nextdoor.nextdoor.domain.post.exception.PostIndexException;
 import com.nextdoor.nextdoor.domain.post.repository.PostRepository;
@@ -7,10 +11,6 @@ import com.nextdoor.nextdoor.domain.post.search.*;
 import com.nextdoor.nextdoor.domain.post.search.dto.BatchTask;
 import com.nextdoor.nextdoor.domain.post.search.dto.PostBatchResult;
 import com.nextdoor.nextdoor.domain.post.search.dto.PostWithLikeCountDto;
-import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch.core.BulkRequest;
-import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
@@ -93,9 +93,12 @@ public class IndexingMessageConsumer implements MessageConsumer {
                 for (PostWithLikeCountDto dto : postDtos) {
                     PostDocument doc = toDocument(dto);
                     String finalNewIndex = newIndex;
+                    long version = toVersion(dto);
                     ops.add(BulkOperation.of(b -> b.index(idx -> idx
                             .index(finalNewIndex)
                             .id(dto.getPostId().toString())
+                            .version(version)
+                            .versionType(VersionType.ExternalGte)
                             .document(doc))));
                 }
 
@@ -143,8 +146,16 @@ public class IndexingMessageConsumer implements MessageConsumer {
             indexLockService.addToPendingIndexQueue(doc);
             throw new PostIndexException("이미 전체 인덱싱 중입니다. 배치 색인을 기다려주세요.");
         } else {
-            elasticSearchRepository.save(doc);
-            log.info("단건 색인 완료: {}", doc.getId());
+            long version = toVersion(dto);
+            asyncEsClient.index(i -> i
+                    .index("posts")
+                    .id(dto.getPostId().toString())
+                    .version(version)
+                    .versionType(VersionType.ExternalGte)
+                    .document(doc)
+            ).join();
+
+            log.info("단건 색인 완료: id={}, version={}", doc.getId(), version);
         }
     }
 
@@ -154,8 +165,19 @@ public class IndexingMessageConsumer implements MessageConsumer {
             throw new PostIndexException("이미 전체 인덱싱 중입니다.");
         }
 
-        elasticSearchRepository.deleteById(postId);
-        log.info("단건 삭제 완료: {}", postId);
+        Long versionFromMsg = null;
+        if (versionFromMsg != null) {
+            asyncEsClient.delete(d -> d
+                    .index("posts")
+                    .id(postId.toString())
+                    .version(versionFromMsg)
+                    .versionType(VersionType.ExternalGte)
+            ).join();
+            log.info("단건 삭제 완료: id={}, version={}", postId, versionFromMsg);
+        } else {
+            elasticSearchRepository.deleteById(postId);
+            log.info("단건 삭제: {}", postId);
+        }
     }
 
     private CompletableFuture<Void> bulkIndexAsync(List<BulkOperation> operations) {
@@ -163,9 +185,24 @@ public class IndexingMessageConsumer implements MessageConsumer {
         return asyncEsClient.bulk(bulkRequest)
                 .thenAccept(response -> {
                     if (response.errors()) {
-                        log.error("Bulk 색인 오류: {}", response.items().stream()
+                        var harmful = response.items().stream()
                                 .filter(item -> item.error() != null)
-                                .map(item -> item.error().reason()).toList());
+                                .filter(item -> {
+                                    int status = item.status();
+                                    String type = item.error().type();
+                                    boolean benign409 = status == 409 || "version_conflict_engine_exception".equals(type);
+                                    boolean benign404 = status == 404;
+                                    return !(benign409 || benign404);
+                                })
+                                .toList();
+
+                        if (!harmful.isEmpty()) {
+                            log.error("Bulk 색인 유해 오류(size={}): {}",
+                                    harmful.size(),
+                                    harmful.stream().map(i -> i.error().reason()).toList());
+                        } else {
+                            log.info("Bulk 색인 완료(무해 충돌/없음 제외): {}", operations.size());
+                        }
                     } else {
                         log.info("Indexed {} documents", operations.size());
                     }
@@ -194,5 +231,12 @@ public class IndexingMessageConsumer implements MessageConsumer {
                 .likeCount(dto.getLikeCount().intValue())
                 .createdAt(dto.getCreatedAt())
                 .build();
+    }
+
+    private long toVersion(PostWithLikeCountDto dto) {
+        return dto.getUpdatedAt()
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
     }
 }
