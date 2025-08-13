@@ -13,12 +13,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReindexRunStore {
     private static final String KEY = "REINDEX_RUN_STATE";
-    private final RedisTemplate<String, String> redis;
+    private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper om;
 
     public Optional<ReindexRunState> get() {
         try {
-            String json = redis.opsForValue().get(KEY);
+            String json = redisTemplate.opsForValue().get(KEY);
             return json == null ? Optional.empty() : Optional.of(om.readValue(json, ReindexRunState.class));
         } catch (Exception e) {
             throw new IllegalStateException("런 상태 로드 실패", e);
@@ -52,8 +52,6 @@ public class ReindexRunStore {
         s.setStatus(ReindexRunState.Status.COMPLETED);
         s.setUpdatedAt(Instant.now());
         save(s);
-        // 선택: 보존기간 설정(예: 7일)
-        // redis.expire(KEY, Duration.ofDays(7));
     }
 
     public void abort(String reason) {
@@ -66,13 +64,13 @@ public class ReindexRunStore {
 
     private void save(ReindexRunState s) {
         try {
-            redis.opsForValue().set(KEY, om.writeValueAsString(s));
+            redisTemplate.opsForValue().set(KEY, om.writeValueAsString(s));
         } catch (Exception e) {
             throw new IllegalStateException("런 상태 저장 실패", e);
         }
     }
 
     public void clear() {
-        redis.delete(KEY);
+        redisTemplate.delete(KEY);
     }
 }
