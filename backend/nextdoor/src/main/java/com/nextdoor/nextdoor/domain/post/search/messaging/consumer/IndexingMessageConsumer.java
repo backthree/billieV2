@@ -34,7 +34,6 @@ public class IndexingMessageConsumer implements MessageConsumer {
     private static final int MAX_IN_FLIGHT_TASKS = 2;
 
     private final PostRepository postRepository;
-    private final ElasticsearchClient esClient;
     private final ElasticsearchAsyncClient asyncEsClient;
     private final IndexLockService indexLockService;
     private final PostSearchRepository elasticSearchRepository;
@@ -67,9 +66,8 @@ public class IndexingMessageConsumer implements MessageConsumer {
             throw new PostIndexException("이미 전체 인덱싱 중입니다.");
         }
 
+        String newIndex = null;
         try {
-            esClient.deleteByQuery(d -> d.index("posts").query(q -> q.matchAll(m -> m)));
-
             Optional<ReindexRunState> runState = runStore.get()
                     .filter(s -> s.getStatus() == ReindexRunState.Status.RUNNING);
 
@@ -82,25 +80,23 @@ public class IndexingMessageConsumer implements MessageConsumer {
             long processed = state.getProcessed();
             LocalDateTime cutoff = LocalDateTime.ofInstant(state.getCutoff(), ZoneId.systemDefault());
 
+            newIndex = indexAliasManager.prepareNewIndex();
+
             List<BatchTask> inFlight = new ArrayList<>(MAX_IN_FLIGHT_TASKS);
 
             while (true) {
                 PostBatchResult result = postBatchReader.findNextBatch(lastId, cutoff);
                 List<PostWithLikeCountDto> postDtos = result.getPosts();
-
-                if (postDtos.isEmpty()) {
-                    break;
-                }
+                if (postDtos.isEmpty()) break;
 
                 List<BulkOperation> ops = new ArrayList<>(postDtos.size());
                 for (PostWithLikeCountDto dto : postDtos) {
                     PostDocument doc = toDocument(dto);
-                    ops.add(
-                            BulkOperation.of(b -> b
-                                    .index(idx -> idx
-                                            .index("posts")
-                                            .id(dto.getPostId().toString())
-                                            .document(doc))));
+                    String finalNewIndex = newIndex;
+                    ops.add(BulkOperation.of(b -> b.index(idx -> idx
+                            .index(finalNewIndex)
+                            .id(dto.getPostId().toString())
+                            .document(doc))));
                 }
 
                 CompletableFuture<Void> f = bulkIndexAsync(ops);
@@ -122,14 +118,20 @@ public class IndexingMessageConsumer implements MessageConsumer {
                 runStore.checkpoint(done.lastId(), processed);
             }
 
+            indexAliasManager.finalizeAndSwap(newIndex, "1", "1s");
+
             runStore.complete();
-            log.info("전체 인덱싱 완료");
+            log.info("전체 인덱싱 완료 및 스왑 완료: newIndex={}, cutoff={}, processed={}",
+                    newIndex, state.getCutoff(), processed);
+
         } catch (Exception e) {
+            log.warn("새 인덱스 {} 로 적재/스왑 중 오류 (스왑 전이면 서비스 검색 영향 없음)", newIndex, e);
             throw new PostIndexException("전체 인덱싱 중 오류", e);
         } finally {
             indexLockService.releaseFullIndexLock();
         }
     }
+
 
     public void indexSinglePost(Long postId) {
         PostWithLikeCountDto dto = postRepository.findDtoById(postId)
