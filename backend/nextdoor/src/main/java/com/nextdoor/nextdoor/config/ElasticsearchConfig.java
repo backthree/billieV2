@@ -43,8 +43,9 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
         return RestClient.builder(new HttpHost(host, port))
                 .setRequestConfigCallback(requestConfigBuilder ->
                         requestConfigBuilder
-                                .setConnectTimeout(5_000)
-                                .setSocketTimeout(120_000)
+                                .setConnectTimeout(3_000)
+                                .setSocketTimeout(30_000)
+                                .setConnectionRequestTimeout(3_000)
                 ).build();
     }
 

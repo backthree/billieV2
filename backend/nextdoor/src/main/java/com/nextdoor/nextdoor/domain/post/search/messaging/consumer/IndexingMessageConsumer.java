@@ -1,7 +1,6 @@
 package com.nextdoor.nextdoor.domain.post.search.messaging.consumer;
 
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
-import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch._types.VersionType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -181,36 +180,15 @@ public class IndexingMessageConsumer implements MessageConsumer {
     }
 
     private CompletableFuture<Void> bulkIndexAsync(List<BulkOperation> operations) {
-        BulkRequest bulkRequest = BulkRequest.of(b -> b.operations(operations));
-        return asyncEsClient.bulk(bulkRequest)
-                .thenAccept(response -> {
-                    if (response.errors()) {
-                        var harmful = response.items().stream()
-                                .filter(item -> item.error() != null)
-                                .filter(item -> {
-                                    int status = item.status();
-                                    String type = item.error().type();
-                                    boolean benign409 = status == 409 || "version_conflict_engine_exception".equals(type);
-                                    boolean benign404 = status == 404;
-                                    return !(benign409 || benign404);
-                                })
-                                .toList();
+        BulkRetryExecutor exec = new BulkRetryExecutor(asyncEsClient);
 
-                        if (!harmful.isEmpty()) {
-                            log.error("Bulk 색인 유해 오류(size={}): {}",
-                                    harmful.size(),
-                                    harmful.stream().map(i -> i.error().reason()).toList());
-                        } else {
-                            log.info("Bulk 색인 완료(무해 충돌/없음 제외): {}", operations.size());
-                        }
-                    } else {
-                        log.info("Indexed {} documents", operations.size());
-                    }
-                })
-                .exceptionally(throwable -> {
-                    log.error("Bulk 실행 중 예외 발생", throwable);
-                    return null;
-                });
+        List<BulkRetryExecutor.Slice> slices = exec.sliceBySize(operations);
+
+        CompletableFuture<Void> chain = CompletableFuture.completedFuture(null);
+        for (BulkRetryExecutor.Slice s : slices) {
+            chain = chain.thenCompose(v -> exec.sendSliceWithRetry(s));
+        }
+        return chain;
     }
 
     private PostDocument toDocument(PostWithLikeCountDto dto) {
