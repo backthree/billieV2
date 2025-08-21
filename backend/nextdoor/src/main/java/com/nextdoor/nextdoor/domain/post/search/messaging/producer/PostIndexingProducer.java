@@ -18,7 +18,7 @@ public class PostIndexingProducer {
     private final MessageProducer messageProducer;
     private final ObjectMapper objectMapper;
 
-    @Value("${sqs.queue.name}")
+    @Value("${sqs.queue.reindex}")
     private String queueName;
 
     public void requestSinglePostIndexing(Long postId) {
