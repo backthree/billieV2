@@ -15,10 +15,10 @@ public class SqsMessageListener {
 
     private final MessageConsumer messageConsumer;
 
-    @Value("${sqs.queue.name}")
+    @Value("${sqs.queue.reindex}")
     private String queueName;
 
-    @SqsListener("${sqs.queue.name}")
+    @SqsListener("${sqs.queue.reindex}")
     public void receiveMessage(String message) {
         try {
             log.info("수신된 메시지: {}", message);

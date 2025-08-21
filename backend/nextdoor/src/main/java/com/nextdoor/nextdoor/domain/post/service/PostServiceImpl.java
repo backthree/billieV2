@@ -3,6 +3,7 @@ package com.nextdoor.nextdoor.domain.post.service;
 import com.nextdoor.nextdoor.domain.aianalysis.controller.dto.response.ProductConditionAnalysisResponseDto;
 import com.nextdoor.nextdoor.domain.post.controller.dto.response.AnalyzeProductImageResponse;
 import com.nextdoor.nextdoor.domain.post.controller.dto.response.CombinedProductAnalysisResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nextdoor.nextdoor.domain.post.domain.Post;
 import com.nextdoor.nextdoor.domain.post.domain.PostLikeCount;
 import com.nextdoor.nextdoor.domain.post.event.PostCreatedEvent;
@@ -17,7 +18,14 @@ import com.nextdoor.nextdoor.domain.post.port.S3ImageUploadPort;
 import com.nextdoor.nextdoor.domain.post.repository.PostLikeCountRepository;
 import com.nextdoor.nextdoor.domain.post.repository.PostLikeRepository;
 import com.nextdoor.nextdoor.domain.post.repository.PostRepository;
+import com.nextdoor.nextdoor.domain.post.search.outbox.OutboxEvent;
+import com.nextdoor.nextdoor.domain.post.search.outbox.OutboxEventRepository;
+import com.nextdoor.nextdoor.domain.post.search.outbox.event.PostDeleteEvent;
+import com.nextdoor.nextdoor.domain.post.search.outbox.event.PostUpsertEvent;
 import com.nextdoor.nextdoor.domain.post.service.dto.*;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,6 +51,8 @@ public class PostServiceImpl implements PostService {
     private final ProductImageAnalysisPort productImageAnalysisPort;
     private final ProductConditionAnalysisPort productConditionAnalysisPort;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventRepository outboxRepo;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -81,9 +91,33 @@ public class PostServiceImpl implements PostService {
 
         Post savedPost = postRepository.save(post);
 
-        eventPublisher.publishEvent(PostCreatedEvent.builder()
-                .postId(savedPost.getId())
-                .build());
+        long version = savedPost.getUpdatedAt()
+                .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+        PostUpsertEvent evt = PostUpsertEvent.builder()
+                .postId(savedPost.getId()).version(version)
+                .title(savedPost.getTitle()).content(savedPost.getContent())
+                .rentalFee(savedPost.getRentalFee()).deposit(savedPost.getDeposit())
+                .address(savedPost.getAddress())
+                .lat(savedPost.getLatitude()).lon(savedPost.getLongitude())
+                .category(savedPost.getCategory()!=null?savedPost.getCategory().name():null)
+                .likeCount(0) 
+                .createdAtIso(savedPost.getCreatedAt().toString())
+                .build();
+
+        OutboxEvent ob = new OutboxEvent();
+        ob.setAggregateType("POST");
+        ob.setAggregateId(savedPost.getId());
+        ob.setEventType("UPSERT");
+        try {
+            ob.setPayload(objectMapper.writeValueAsString(evt));
+        } catch (Exception e) {
+            throw new RuntimeException("이벤트 직렬화 실패", e);
+        }
+        ob.setVersion(version);
+        ob.setCreatedAt(savedPost.getUpdatedAt());
+        ob.setPublished(false);
+        outboxRepo.save(ob);
 
         List<String> imageUrls = new ArrayList<>();
         for (MultipartFile image : command.getProductImages()) {
@@ -210,9 +244,33 @@ public class PostServiceImpl implements PostService {
 
         updatedPost = postRepository.save(updatedPost);
 
-        eventPublisher.publishEvent(PostUpdatedEvent.builder()
-                .postId(updatedPost.getId())
-                .build());
+        long version = updatedPost.getUpdatedAt()
+                .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+        PostUpsertEvent evt = PostUpsertEvent.builder()
+                .postId(updatedPost.getId()).version(version)
+                .title(updatedPost.getTitle()).content(updatedPost.getContent())
+                .rentalFee(updatedPost.getRentalFee()).deposit(updatedPost.getDeposit())
+                .address(updatedPost.getAddress())
+                .lat(updatedPost.getLatitude()).lon(updatedPost.getLongitude())
+                .category(updatedPost.getCategory()!=null?updatedPost.getCategory().name():null)
+                .likeCount(getPostLikeCount(updatedPost.getId()))
+                .createdAtIso(updatedPost.getCreatedAt().toString())
+                .build();
+
+        OutboxEvent ob = new OutboxEvent();
+        ob.setAggregateType("POST");
+        ob.setAggregateId(updatedPost.getId());
+        ob.setEventType("UPSERT");
+        try {
+            ob.setPayload(objectMapper.writeValueAsString(evt));
+        } catch (Exception e) {
+            throw new RuntimeException("이벤트 직렬화 실패", e);
+        }
+        ob.setVersion(version);
+        ob.setCreatedAt(updatedPost.getUpdatedAt());
+        ob.setPublished(false);
+        outboxRepo.save(ob);
 
         List<String> imageUrls = new ArrayList<>();
         if (command.getProductImages() != null && !command.getProductImages().isEmpty()) {
@@ -261,9 +319,23 @@ public class PostServiceImpl implements PostService {
         postRepository.delete(post);
         postLikeCountRepository.findById(postId).ifPresent(postLikeCountRepository::delete);
 
-        eventPublisher.publishEvent(PostUpdatedEvent.builder()
-                .postId(postId)
-                .build());
+        long version = System.currentTimeMillis();
+        PostDeleteEvent evt = PostDeleteEvent.builder()
+                .postId(postId).version(version).build();
+
+        OutboxEvent ob = new OutboxEvent();
+        ob.setAggregateType("POST");
+        ob.setAggregateId(postId);
+        ob.setEventType("DELETE");
+        try {
+            ob.setPayload(objectMapper.writeValueAsString(evt));
+        } catch (Exception e) {
+            throw new RuntimeException("이벤트 직렬화 실패", e);
+        }
+        ob.setVersion(version);
+        ob.setCreatedAt(LocalDateTime.now());
+        ob.setPublished(false);
+        outboxRepo.save(ob);
 
         return true;
     }

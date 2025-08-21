@@ -56,7 +56,9 @@ spring:
 
 sqs:
   queue:
-    name: billie-indexer-queue
+    reindex: billie-indexer-queue
+    upsert: posts-upsert.fifo
+    delete: posts-delete
 
 custom:
   google:
@@ -116,3 +118,6 @@ spring:
 
   main:
     web-application-type: none
+
+  task:
+    scheduling.pool.size: 3
