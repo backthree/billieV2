@@ -50,11 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/generate-tokens").permitAll()
                         .requestMatchers("/index-all").permitAll()
                         .requestMatchers("/api/v1/auth").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/posts").permitAll()
-                        .requestMatchers(
-                                "/api/v1/posts/{postId}/like",
-                                "/api/v1/posts/liked"
-                        ).authenticated()
+                        .requestMatchers("/api/v1/posts/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .redirectionEndpoint(redirection -> redirection
