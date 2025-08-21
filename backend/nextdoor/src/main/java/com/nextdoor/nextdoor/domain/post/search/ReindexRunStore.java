@@ -17,7 +17,7 @@ public class ReindexRunStore {
     private static final String FENCING_SEQ_KEY = "REINDEX:FENCING_SEQ";
     private static final long TTL_SECONDS = 1800;
 
-    private final RedisTemplate<String, String> redis;
+    private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper om;
 
     private final DefaultRedisScript<Long> BEGIN_OR_RESUME = new DefaultRedisScript<>(
@@ -106,39 +106,39 @@ public class ReindexRunStore {
     public ReindexRunState beginOrResume(Instant cutoff) {
         String runId = UUID.randomUUID().toString();
         String now = String.valueOf(Instant.now().toEpochMilli());
-        redis.execute(BEGIN_OR_RESUME, List.of(STATE_KEY, FENCING_SEQ_KEY),
+        redisTemplate.execute(BEGIN_OR_RESUME, List.of(STATE_KEY, FENCING_SEQ_KEY),
                 runId, String.valueOf(cutoff.toEpochMilli()), now, String.valueOf(TTL_SECONDS));
         return get().orElseThrow();
     }
 
     public boolean attachNewIndexIfEmpty(String newIndex) {
         String now = String.valueOf(Instant.now().toEpochMilli());
-        Long r = redis.execute(ATTACH_NEW_INDEX_IF_EMPTY, List.of(STATE_KEY),
+        Long r = redisTemplate.execute(ATTACH_NEW_INDEX_IF_EMPTY, List.of(STATE_KEY),
                 newIndex, now, String.valueOf(TTL_SECONDS));
         return r != null && r == 1L;
     }
 
     public boolean checkpointAdvance(long lastId, long processed) {
         String now = String.valueOf(Instant.now().toEpochMilli());
-        Long r = redis.execute(CHECKPOINT_ADVANCE, List.of(STATE_KEY),
+        Long r = redisTemplate.execute(CHECKPOINT_ADVANCE, List.of(STATE_KEY),
                 String.valueOf(lastId), String.valueOf(processed), now, String.valueOf(TTL_SECONDS));
         return r != null && r == 1L;
     }
 
     public void markIndexed() {
         String now = String.valueOf(Instant.now().toEpochMilli());
-        redis.execute(MARK_INDEXED, List.of(STATE_KEY), now);
+        redisTemplate.execute(MARK_INDEXED, List.of(STATE_KEY), now);
     }
 
     public boolean completeIfToken(long token) {
         String now = String.valueOf(Instant.now().toEpochMilli());
-        Long r = redis.execute(COMPLETE_IF_TOKEN, List.of(STATE_KEY),
+        Long r = redisTemplate.execute(COMPLETE_IF_TOKEN, List.of(STATE_KEY),
                 String.valueOf(token), now);
         return r != null && r == 1L;
     }
 
     public Optional<ReindexRunState> get() {
-        Map<Object, Object> m = redis.opsForHash().entries(STATE_KEY);
+        Map<Object, Object> m = redisTemplate.opsForHash().entries(STATE_KEY);
         if (m == null || m.isEmpty()) return Optional.empty();
         ReindexRunState s = new ReindexRunState();
         s.setRunId((String) m.get("runId"));
@@ -159,13 +159,13 @@ public class ReindexRunStore {
     }
 
     public void abort(String reason) {
-        redis.opsForHash().put(STATE_KEY, "status", "ABORTED");
-        redis.opsForHash().put(STATE_KEY, "abortReason", reason);
-        redis.expire(STATE_KEY, TTL_SECONDS, TimeUnit.SECONDS);
+        redisTemplate.opsForHash().put(STATE_KEY, "status", "ABORTED");
+        redisTemplate.opsForHash().put(STATE_KEY, "abortReason", reason);
+        redisTemplate.expire(STATE_KEY, TTL_SECONDS, TimeUnit.SECONDS);
     }
 
     public void clear() {
-        redis.delete(STATE_KEY);
+        redisTemplate.delete(STATE_KEY);
     }
 
     private long parseLong(Object v) {
