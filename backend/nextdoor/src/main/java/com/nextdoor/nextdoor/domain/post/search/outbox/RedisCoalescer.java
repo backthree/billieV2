@@ -3,6 +3,7 @@ package com.nextdoor.nextdoor.domain.post.search.outbox;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -24,15 +25,23 @@ public class RedisCoalescer {
 
     private static final long TTL_SEC = 180;
 
-    private final Counter coalescerHit = Counter.builder("coalescer.hit")
-            .description("이미 존재하여 디바운스된 횟수").tag("entity","post").register(meterRegistry);
-    private final Counter coalescerMiss = Counter.builder("coalescer.miss")
-            .description("새로 세팅된 횟수").tag("entity","post").register(meterRegistry);
-    private final Counter coalescerFlushed = Counter.builder("coalescer.flush")
-            .description("TTL 임박 플러시 횟수").tag("entity","post").register(meterRegistry);
-    private final DistributionSummary ttlAtFlush = DistributionSummary.builder("coalescer.flush.ttl_seconds")
-            .description("플러시 직전 남은 TTL(초)").baseUnit("seconds")
-            .publishPercentileHistogram().register(meterRegistry);
+    private Counter coalescerHit;
+    private Counter coalescerMiss;
+    private Counter coalescerFlushed;
+    private DistributionSummary ttlAtFlush;
+
+    @PostConstruct
+    public void init() {
+        this.coalescerHit = Counter.builder("coalescer.hit")
+                .description("이미 존재하여 디바운스된 횟수").tag("entity","post").register(meterRegistry);
+        this.coalescerMiss = Counter.builder("coalescer.miss")
+                .description("새로 세팅된 횟수").tag("entity","post").register(meterRegistry);
+        this.coalescerFlushed = Counter.builder("coalescer.flush")
+                .description("TTL 임박 플러시 횟수").tag("entity","post").register(meterRegistry);
+        this.ttlAtFlush = DistributionSummary.builder("coalescer.flush.ttl_seconds")
+                .description("플러시 직전 남은 TTL(초)").baseUnit("seconds")
+                .publishPercentileHistogram().register(meterRegistry);
+    }
 
     public void put(Long postId, Long version, String payload) {
         String key = KEY(postId);

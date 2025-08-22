@@ -4,6 +4,7 @@ import com.nextdoor.nextdoor.domain.post.search.outbox.event.PostDeleteEvent;
 import com.nextdoor.nextdoor.domain.post.search.outbox.event.PostUpsertEvent;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,15 +30,21 @@ public class SqsPublisher {
     @Value("${sqs.queue.delete}")
     private String deleteQueueUrl;
 
-    private final DistributionSummary upsertSize = DistributionSummary.builder("sqs.message.bytes")
-            .description("SQS 메시지 크기").baseUnit("bytes")
-            .publishPercentileHistogram().tag("type","UPSERT")
-            .register(meterRegistry);
+    private DistributionSummary upsertSize;
+    private DistributionSummary deleteSize;
 
-    private final DistributionSummary deleteSize = DistributionSummary.builder("sqs.message.bytes")
-            .description("SQS 메시지 크기").baseUnit("bytes")
-            .publishPercentileHistogram().tag("type","DELETE")
-            .register(meterRegistry);
+    @PostConstruct
+    public void init() {
+        this.upsertSize = DistributionSummary.builder("sqs.message.bytes")
+                .description("SQS 메시지 크기").baseUnit("bytes")
+                .publishPercentileHistogram().tag("type", "UPSERT")
+                .register(meterRegistry);
+
+        this.deleteSize = DistributionSummary.builder("sqs.message.bytes")
+                .description("SQS 메시지 크기").baseUnit("bytes")
+                .publishPercentileHistogram().tag("type", "DELETE")
+                .register(meterRegistry);
+    }
 
     public CompletableFuture<SendMessageResponse> sendDelete(String payload) {
         try {
