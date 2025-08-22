@@ -39,12 +39,7 @@ spring:
           kakao:
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/api/v1/auth/oauth2/code/{registrationId}"
-            scope:
-              - profile_nickname
-              - profile_image
-              - account_email
-              - gender
-              - birthday
+            scope: [profile_nickname, profile_image, account_email, gender, birthday]
             client-name: Kakao
             client-authentication-method: client_secret_post
         provider:
@@ -89,21 +84,42 @@ logging:
     root: ERROR
     com.nextdoor.nextdoor.domain.post.search: WARN
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      app: billie
+      svc: api
+      env: prod
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 50ms,100ms,250ms,500ms,1s,2s,5s
+
 ---
 
 spring:
   config:
     activate:
       on-profile: "api"
-
+  mvc:
+    async:
+      request-timeout: 30s
 server:
   port: 8081
+  tomcat:
+    connection-timeout: 30s
+    max-threads: 300
+    accept-count: 200
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: '*'
   prometheus:
     metrics:
       export:
@@ -115,9 +131,9 @@ spring:
   config:
     activate:
       on-profile: "worker"
-
   main:
     web-application-type: none
-
   task:
-    scheduling.pool.size: 3
+    scheduling:
+      pool:
+        size: 3

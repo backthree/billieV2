@@ -23,12 +23,12 @@ import com.nextdoor.nextdoor.domain.post.search.outbox.OutboxEventRepository;
 import com.nextdoor.nextdoor.domain.post.search.outbox.event.PostDeleteEvent;
 import com.nextdoor.nextdoor.domain.post.search.outbox.event.PostUpsertEvent;
 import com.nextdoor.nextdoor.domain.post.service.dto.*;
-
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,9 +50,25 @@ public class PostServiceImpl implements PostService {
     private final PostMapper postMapper;
     private final ProductImageAnalysisPort productImageAnalysisPort;
     private final ProductConditionAnalysisPort productConditionAnalysisPort;
-    private final ApplicationEventPublisher eventPublisher;
     private final OutboxEventRepository outboxRepo;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
+
+    private void recordOutboxInsert(Runnable action, String eventType) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            action.run();
+        } finally {
+            sample.stop(
+                    Timer.builder("outbox.insert.latency")
+                            .description("DB TX 종료~Outbox 저장 구간")
+                            .tag("aggregate","post")
+                            .tag("event", eventType)
+                            .publishPercentileHistogram()
+                            .register(meterRegistry)
+            );
+        }
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -101,7 +117,7 @@ public class PostServiceImpl implements PostService {
                 .address(savedPost.getAddress())
                 .lat(savedPost.getLatitude()).lon(savedPost.getLongitude())
                 .category(savedPost.getCategory()!=null?savedPost.getCategory().name():null)
-                .likeCount(0) 
+                .likeCount(0)
                 .createdAtIso(savedPost.getCreatedAt().toString())
                 .build();
 
@@ -117,7 +133,8 @@ public class PostServiceImpl implements PostService {
         ob.setVersion(version);
         ob.setCreatedAt(savedPost.getUpdatedAt());
         ob.setPublished(false);
-        outboxRepo.save(ob);
+
+        recordOutboxInsert(() -> outboxRepo.save(ob), "UPSERT");
 
         List<String> imageUrls = new ArrayList<>();
         for (MultipartFile image : command.getProductImages()) {
@@ -150,7 +167,6 @@ public class PostServiceImpl implements PostService {
     public CombinedProductAnalysisResponse analyzeProduct(MultipartFile productImage) {
         AnalyzeProductImageResponse imageResponse = analyzeProductImage(productImage);
         ProductConditionAnalysisResponseDto conditionResponse = analyzeProductCondition(productImage);
-
         return CombinedProductAnalysisResponse.from(imageResponse, conditionResponse);
     }
 
@@ -159,18 +175,11 @@ public class PostServiceImpl implements PostService {
     public boolean likePost(Long postId, Long memberId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
-
-        if (postLikeRepository.existsByPostAndMemberId(post, memberId)) {
-            return false;
-        }
+        if (postLikeRepository.existsByPostAndMemberId(post, memberId)) return false;
 
         post.addLike(memberId);
-
-        postLikeCountRepository.findById(postId)
-                .orElseGet(() -> new PostLikeCount(postId, 0L));
-
+        postLikeCountRepository.findById(postId).orElseGet(() -> new PostLikeCount(postId, 0L));
         postLikeCountRepository.incrementLikeCount(postId);
-
         return true;
     }
 
@@ -179,18 +188,11 @@ public class PostServiceImpl implements PostService {
     public boolean unlikePost(Long postId, Long memberId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
-
-        if (!postLikeRepository.existsByPostAndMemberId(post, memberId)) {
-            return false;
-        }
+        if (!postLikeRepository.existsByPostAndMemberId(post, memberId)) return false;
 
         post.removeLike(memberId);
-
-        postLikeCountRepository.findById(postId)
-                .orElseGet(() -> new PostLikeCount(postId, 0L));
-
+        postLikeCountRepository.findById(postId).orElseGet(() -> new PostLikeCount(postId, 0L));
         postLikeCountRepository.decrementLikeCount(postId);
-
         return true;
     }
 
@@ -199,7 +201,6 @@ public class PostServiceImpl implements PostService {
     public boolean isPostLikedByMember(Long postId, Long memberId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
-
         return postLikeRepository.existsByPostAndMemberId(post, memberId);
     }
 
@@ -207,9 +208,7 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public int getPostLikeCount(Long postId) {
         return postLikeCountRepository.findById(postId)
-                .map(PostLikeCount::getLikeCount)
-                .map(Long::intValue)
-                .orElse(0);
+                .map(PostLikeCount::getLikeCount).map(Long::intValue).orElse(0);
     }
 
     @Override
@@ -223,29 +222,26 @@ public class PostServiceImpl implements PostService {
     public UpdatePostResult updatePost(UpdatePostCommand command) {
         Post post = postRepository.findById(command.getPostId())
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + command.getPostId() + "인 게시물이 존재하지 않습니다."));
-
         if (!post.getAuthorId().equals(command.getAuthorId())) {
             throw new IllegalArgumentException("게시물 작성자만 수정할 수 있습니다.");
         }
 
         Post updatedPost = Post.builder()
                 .id(post.getId())
-                .title(command.getTitle() != null ? command.getTitle() : post.getTitle())
-                .content(command.getContent() != null ? command.getContent() : post.getContent())
-                .category(command.getCategory() != null ? command.getCategory() : post.getCategory())
-                .rentalFee(command.getRentalFee() != null ? command.getRentalFee() : post.getRentalFee())
-                .deposit(command.getDeposit() != null ? command.getDeposit() : post.getDeposit())
-                .address(command.getAddress() != null ? command.getAddress() : post.getAddress())
-                .latitude(command.getPreferredLocation() != null ? command.getPreferredLocation().getLatitude() : post.getLatitude())
-                .longitude(command.getPreferredLocation() != null ? command.getPreferredLocation().getLongitude() : post.getLongitude())
+                .title(command.getTitle()!=null?command.getTitle():post.getTitle())
+                .content(command.getContent()!=null?command.getContent():post.getContent())
+                .category(command.getCategory()!=null?command.getCategory():post.getCategory())
+                .rentalFee(command.getRentalFee()!=null?command.getRentalFee():post.getRentalFee())
+                .deposit(command.getDeposit()!=null?command.getDeposit():post.getDeposit())
+                .address(command.getAddress()!=null?command.getAddress():post.getAddress())
+                .latitude(command.getPreferredLocation()!=null?command.getPreferredLocation().getLatitude():post.getLatitude())
+                .longitude(command.getPreferredLocation()!=null?command.getPreferredLocation().getLongitude():post.getLongitude())
                 .authorId(post.getAuthorId())
                 .productImages(new ArrayList<>(post.getProductImages()))
                 .build();
 
         updatedPost = postRepository.save(updatedPost);
-
-        long version = updatedPost.getUpdatedAt()
-                .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long version = updatedPost.getUpdatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
         PostUpsertEvent evt = PostUpsertEvent.builder()
                 .postId(updatedPost.getId()).version(version)
@@ -262,18 +258,16 @@ public class PostServiceImpl implements PostService {
         ob.setAggregateType("POST");
         ob.setAggregateId(updatedPost.getId());
         ob.setEventType("UPSERT");
-        try {
-            ob.setPayload(objectMapper.writeValueAsString(evt));
-        } catch (Exception e) {
-            throw new RuntimeException("이벤트 직렬화 실패", e);
-        }
+        try { ob.setPayload(objectMapper.writeValueAsString(evt)); }
+        catch (Exception e) { throw new RuntimeException("이벤트 직렬화 실패", e); }
         ob.setVersion(version);
         ob.setCreatedAt(updatedPost.getUpdatedAt());
         ob.setPublished(false);
-        outboxRepo.save(ob);
+
+        recordOutboxInsert(() -> outboxRepo.save(ob), "UPSERT");
 
         List<String> imageUrls = new ArrayList<>();
-        if (command.getProductImages() != null && !command.getProductImages().isEmpty()) {
+        if (command.getProductImages()!=null && !command.getProductImages().isEmpty()) {
             updatedPost = Post.builder()
                     .id(updatedPost.getId())
                     .title(updatedPost.getTitle())
@@ -311,7 +305,6 @@ public class PostServiceImpl implements PostService {
     public boolean deletePost(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
-
         if (!post.getAuthorId().equals(userId)) {
             throw new IllegalArgumentException("게시물 작성자만 삭제할 수 있습니다.");
         }
@@ -327,15 +320,13 @@ public class PostServiceImpl implements PostService {
         ob.setAggregateType("POST");
         ob.setAggregateId(postId);
         ob.setEventType("DELETE");
-        try {
-            ob.setPayload(objectMapper.writeValueAsString(evt));
-        } catch (Exception e) {
-            throw new RuntimeException("이벤트 직렬화 실패", e);
-        }
+        try { ob.setPayload(objectMapper.writeValueAsString(evt)); }
+        catch (Exception e) { throw new RuntimeException("이벤트 직렬화 실패", e); }
         ob.setVersion(version);
         ob.setCreatedAt(LocalDateTime.now());
         ob.setPublished(false);
-        outboxRepo.save(ob);
+
+        recordOutboxInsert(() -> outboxRepo.save(ob), "DELETE");
 
         return true;
     }
