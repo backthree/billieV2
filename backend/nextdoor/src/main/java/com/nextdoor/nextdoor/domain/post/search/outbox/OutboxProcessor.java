@@ -3,6 +3,7 @@ package com.nextdoor.nextdoor.domain.post.search.outbox;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Counter;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -19,9 +20,14 @@ public class OutboxProcessor {
     private final SqsPublisher sqsPublisher;
     private final RedisCoalescer coalescer;
     private final MeterRegistry meterRegistry;
+    private Counter batchCount;
 
-    private final Counter batchCount = Counter.builder("outbox.batch.count")
-            .description("아웃박스 배치 처리 횟수").register(meterRegistry);
+    @PostConstruct
+    public void init() {
+        this.batchCount = Counter.builder("outbox.batch.count")
+                .description("아웃박스 배치 처리 횟수")
+                .register(meterRegistry);
+    }
 
     @Scheduled(fixedDelay = 2000)
     @Transactional
