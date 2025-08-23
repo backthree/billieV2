@@ -79,11 +79,6 @@ cloud:
     s3:
       bucket: oneders
 
-logging:
-  level:
-    root: ERROR
-    com.nextdoor.nextdoor.domain.post.search: WARN
-
 management:
   endpoints:
     web:
@@ -119,6 +114,10 @@ server:
     max-threads: 300
     accept-count: 200
 
+logging:
+  level:
+    root: DEBUG
+
 management:
   prometheus:
     metrics:
@@ -137,3 +136,8 @@ spring:
     scheduling:
       pool:
         size: 3
+
+logging:
+  level:
+    root: ERROR
+    com.nextdoor.nextdoor.domain.post.search: WARN
