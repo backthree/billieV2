@@ -1,13 +1,11 @@
 package com.nextdoor.nextdoor.domain.post.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nextdoor.nextdoor.domain.aianalysis.controller.dto.response.ProductConditionAnalysisResponseDto;
 import com.nextdoor.nextdoor.domain.post.controller.dto.response.AnalyzeProductImageResponse;
 import com.nextdoor.nextdoor.domain.post.controller.dto.response.CombinedProductAnalysisResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nextdoor.nextdoor.domain.post.domain.Post;
 import com.nextdoor.nextdoor.domain.post.domain.PostLikeCount;
-import com.nextdoor.nextdoor.domain.post.event.PostCreatedEvent;
-import com.nextdoor.nextdoor.domain.post.event.PostUpdatedEvent;
 import com.nextdoor.nextdoor.domain.post.exception.NoSuchPostException;
 import com.nextdoor.nextdoor.domain.post.exception.PostImageUploadException;
 import com.nextdoor.nextdoor.domain.post.mapper.PostMapper;
@@ -23,10 +21,9 @@ import com.nextdoor.nextdoor.domain.post.search.outbox.OutboxEventRepository;
 import com.nextdoor.nextdoor.domain.post.search.outbox.event.PostDeleteEvent;
 import com.nextdoor.nextdoor.domain.post.search.outbox.event.PostUpsertEvent;
 import com.nextdoor.nextdoor.domain.post.service.dto.*;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,6 +31,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,6 +53,8 @@ public class PostServiceImpl implements PostService {
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
 
+    private static final long SLOW_MS = 1_000L;
+
     private void recordOutboxInsert(Runnable action, String eventType) {
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
@@ -62,12 +63,25 @@ public class PostServiceImpl implements PostService {
             sample.stop(
                     Timer.builder("outbox.insert.latency")
                             .description("DB TX 종료~Outbox 저장 구간")
-                            .tag("aggregate","post")
+                            .tag("aggregate", "post")
                             .tag("event", eventType)
                             .publishPercentileHistogram()
                             .register(meterRegistry)
             );
         }
+    }
+
+    private Timer phaseTimer(String name) {
+        return Timer.builder(name)
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+    }
+
+    private Timer phaseTimer(String name, String tagKey, String tagVal) {
+        return Timer.builder(name)
+                .tag(tagKey, tagVal)
+                .publishPercentileHistogram()
+                .register(meterRegistry);
     }
 
     @Override
@@ -85,6 +99,9 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public CreatePostResult createPost(CreatePostCommand command) {
+        final long t0 = System.currentTimeMillis();
+        final Timer.Sample totalSample = Timer.start(meterRegistry); // 총합 타이머
+
         Double latitude = null;
         Double longitude = null;
         if (command.getPreferredLocation() != null) {
@@ -92,6 +109,7 @@ public class PostServiceImpl implements PostService {
             longitude = command.getPreferredLocation().getLongitude();
         }
 
+        Timer.Sample dbSave = Timer.start(meterRegistry);
         Post post = Post.builder()
                 .title(command.getTitle())
                 .content(command.getContent())
@@ -104,9 +122,10 @@ public class PostServiceImpl implements PostService {
                 .authorId(command.getAuthorId())
                 .productImages(new ArrayList<>())
                 .build();
-
         Post savedPost = postRepository.save(post);
+        dbSave.stop(phaseTimer("post.create.phase", "phase", "db.save"));
 
+        Timer.Sample outboxSerialize = Timer.start(meterRegistry);
         long version = savedPost.getUpdatedAt()
                 .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
@@ -116,7 +135,7 @@ public class PostServiceImpl implements PostService {
                 .rentalFee(savedPost.getRentalFee()).deposit(savedPost.getDeposit())
                 .address(savedPost.getAddress())
                 .lat(savedPost.getLatitude()).lon(savedPost.getLongitude())
-                .category(savedPost.getCategory()!=null?savedPost.getCategory().name():null)
+                .category(savedPost.getCategory() != null ? savedPost.getCategory().name() : null)
                 .likeCount(0)
                 .createdAtIso(savedPost.getCreatedAt().toString())
                 .build();
@@ -128,26 +147,62 @@ public class PostServiceImpl implements PostService {
         try {
             ob.setPayload(objectMapper.writeValueAsString(evt));
         } catch (Exception e) {
+            outboxSerialize.stop(phaseTimer("post.create.phase", "phase", "outbox.serialize"));
             throw new RuntimeException("이벤트 직렬화 실패", e);
         }
+        outboxSerialize.stop(phaseTimer("post.create.phase", "phase", "outbox.serialize"));
+
         ob.setVersion(version);
         ob.setCreatedAt(savedPost.getUpdatedAt());
         ob.setPublished(false);
 
+        Timer.Sample outboxSave = Timer.start(meterRegistry);
         recordOutboxInsert(() -> outboxRepo.save(ob), "UPSERT");
+        outboxSave.stop(phaseTimer("post.create.phase", "phase", "outbox.save"));
 
         List<String> imageUrls = new ArrayList<>();
-        for (MultipartFile image : command.getProductImages()) {
+        List<MultipartFile> images = command.getProductImages() != null ? command.getProductImages() : List.of();
+
+        DistributionSummary.builder("post.images.count")
+                .register(meterRegistry).record(images.size());
+
+        long totalBytes = 0L;
+        for (MultipartFile f : images) {
             try {
-                String imageUrl = s3ImageUploadPort.uploadProductImage(image, savedPost.getId());
-                imageUrls.add(imageUrl);
-                savedPost.addProductImage(imageUrl);
-            } catch (Exception e) {
-                throw new PostImageUploadException("게시물 이미지 업로드에 실패했습니다.", e);
+                totalBytes += (f != null ? f.getSize() : 0L);
+            } catch (Exception ignore) {}
+        }
+        DistributionSummary.builder("post.images.bytes")
+                .register(meterRegistry).record(totalBytes);
+
+        if (!images.isEmpty()) {
+            Timer.Sample imgAll = Timer.start(meterRegistry);
+            for (MultipartFile image : images) {
+                Timer.Sample imgOne = Timer.start(meterRegistry);
+                try {
+                    String imageUrl = s3ImageUploadPort.uploadProductImage(image, savedPost.getId());
+                    imageUrls.add(imageUrl);
+                    savedPost.addProductImage(imageUrl);
+                } catch (Exception e) {
+                    meterRegistry.counter("post.images.upload.error").increment();
+                    imgOne.stop(phaseTimer("post.create.phase", "phase", "image.upload.one"));
+                    throw new PostImageUploadException("게시물 이미지 업로드에 실패했습니다.", e);
+                }
+                imgOne.stop(phaseTimer("post.create.phase", "phase", "image.upload.one"));
             }
+            imgAll.stop(phaseTimer("post.create.phase", "phase", "image.upload.all"));
         }
 
-        return postMapper.toCreateResult(savedPost, imageUrls);
+        CreatePostResult result = postMapper.toCreateResult(savedPost, imageUrls);
+
+        long elapsed = System.currentTimeMillis() - t0;
+        if (elapsed >= SLOW_MS) {
+            log.warn("SLOW createPost total={}ms (db.save/outbox.serialize/outbox.save/image.upload.*), imgCount={}, imgBytes={}",
+                    elapsed, images.size(), totalBytes);
+        }
+        totalSample.stop(phaseTimer("post.create.total"));
+
+        return result;
     }
 
     @Override
@@ -228,14 +283,14 @@ public class PostServiceImpl implements PostService {
 
         Post updatedPost = Post.builder()
                 .id(post.getId())
-                .title(command.getTitle()!=null?command.getTitle():post.getTitle())
-                .content(command.getContent()!=null?command.getContent():post.getContent())
-                .category(command.getCategory()!=null?command.getCategory():post.getCategory())
-                .rentalFee(command.getRentalFee()!=null?command.getRentalFee():post.getRentalFee())
-                .deposit(command.getDeposit()!=null?command.getDeposit():post.getDeposit())
-                .address(command.getAddress()!=null?command.getAddress():post.getAddress())
-                .latitude(command.getPreferredLocation()!=null?command.getPreferredLocation().getLatitude():post.getLatitude())
-                .longitude(command.getPreferredLocation()!=null?command.getPreferredLocation().getLongitude():post.getLongitude())
+                .title(command.getTitle() != null ? command.getTitle() : post.getTitle())
+                .content(command.getContent() != null ? command.getContent() : post.getContent())
+                .category(command.getCategory() != null ? command.getCategory() : post.getCategory())
+                .rentalFee(command.getRentalFee() != null ? command.getRentalFee() : post.getRentalFee())
+                .deposit(command.getDeposit() != null ? command.getDeposit() : post.getDeposit())
+                .address(command.getAddress() != null ? command.getAddress() : post.getAddress())
+                .latitude(command.getPreferredLocation() != null ? command.getPreferredLocation().getLatitude() : post.getLatitude())
+                .longitude(command.getPreferredLocation() != null ? command.getPreferredLocation().getLongitude() : post.getLongitude())
                 .authorId(post.getAuthorId())
                 .productImages(new ArrayList<>(post.getProductImages()))
                 .build();
@@ -249,7 +304,7 @@ public class PostServiceImpl implements PostService {
                 .rentalFee(updatedPost.getRentalFee()).deposit(updatedPost.getDeposit())
                 .address(updatedPost.getAddress())
                 .lat(updatedPost.getLatitude()).lon(updatedPost.getLongitude())
-                .category(updatedPost.getCategory()!=null?updatedPost.getCategory().name():null)
+                .category(updatedPost.getCategory() != null ? updatedPost.getCategory().name() : null)
                 .likeCount(getPostLikeCount(updatedPost.getId()))
                 .createdAtIso(updatedPost.getCreatedAt().toString())
                 .build();
@@ -258,8 +313,11 @@ public class PostServiceImpl implements PostService {
         ob.setAggregateType("POST");
         ob.setAggregateId(updatedPost.getId());
         ob.setEventType("UPSERT");
-        try { ob.setPayload(objectMapper.writeValueAsString(evt)); }
-        catch (Exception e) { throw new RuntimeException("이벤트 직렬화 실패", e); }
+        try {
+            ob.setPayload(objectMapper.writeValueAsString(evt));
+        } catch (Exception e) {
+            throw new RuntimeException("이벤트 직렬화 실패", e);
+        }
         ob.setVersion(version);
         ob.setCreatedAt(updatedPost.getUpdatedAt());
         ob.setPublished(false);
@@ -267,7 +325,7 @@ public class PostServiceImpl implements PostService {
         recordOutboxInsert(() -> outboxRepo.save(ob), "UPSERT");
 
         List<String> imageUrls = new ArrayList<>();
-        if (command.getProductImages()!=null && !command.getProductImages().isEmpty()) {
+        if (command.getProductImages() != null && !command.getProductImages().isEmpty()) {
             updatedPost = Post.builder()
                     .id(updatedPost.getId())
                     .title(updatedPost.getTitle())
@@ -320,8 +378,11 @@ public class PostServiceImpl implements PostService {
         ob.setAggregateType("POST");
         ob.setAggregateId(postId);
         ob.setEventType("DELETE");
-        try { ob.setPayload(objectMapper.writeValueAsString(evt)); }
-        catch (Exception e) { throw new RuntimeException("이벤트 직렬화 실패", e); }
+        try {
+            ob.setPayload(objectMapper.writeValueAsString(evt));
+        } catch (Exception e) {
+            throw new RuntimeException("이벤트 직렬화 실패", e);
+        }
         ob.setVersion(version);
         ob.setCreatedAt(LocalDateTime.now());
         ob.setPublished(false);
