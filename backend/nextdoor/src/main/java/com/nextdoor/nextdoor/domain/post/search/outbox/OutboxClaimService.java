@@ -12,7 +12,7 @@ public class OutboxClaimService {
 
     private final OutboxEventRepository outboxRepo;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Long> claimIds() {
         return outboxRepo.findOutboxIdsToProcess();
     }
