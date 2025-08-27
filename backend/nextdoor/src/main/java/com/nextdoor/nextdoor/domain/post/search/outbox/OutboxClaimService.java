@@ -9,10 +9,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OutboxClaimService {
-    
+
     private final OutboxEventRepository outboxRepo;
 
-    @Transactional(readOnly = false)
+    @Transactional(readOnly = true)
     public List<Long> claimIds() {
         return outboxRepo.findOutboxIdsToProcess();
     }

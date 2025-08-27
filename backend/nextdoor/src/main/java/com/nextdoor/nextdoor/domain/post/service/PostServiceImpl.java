@@ -7,7 +7,6 @@ import com.nextdoor.nextdoor.domain.post.controller.dto.response.CombinedProduct
 import com.nextdoor.nextdoor.domain.post.domain.Post;
 import com.nextdoor.nextdoor.domain.post.domain.PostLikeCount;
 import com.nextdoor.nextdoor.domain.post.exception.NoSuchPostException;
-import com.nextdoor.nextdoor.domain.post.exception.PostImageUploadException;
 import com.nextdoor.nextdoor.domain.post.mapper.PostMapper;
 import com.nextdoor.nextdoor.domain.post.port.PostQueryPort;
 import com.nextdoor.nextdoor.domain.post.port.ProductConditionAnalysisPort;
@@ -24,9 +23,11 @@ import com.nextdoor.nextdoor.domain.post.service.dto.*;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,35 +54,67 @@ public class PostServiceImpl implements PostService {
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
 
-    private static final long SLOW_MS = 1_000L;
+    private Timer outboxInsertTimer;
+    private Timer dbSaveTimer;
+    private Timer outboxSerializeTimer;
+    private Timer outboxSaveTimer;
+    private Timer imageUploadOneTimer;
+    private Timer imageUploadAllTimer;
+    private Timer totalTimer;
+    private DistributionSummary imageCountSummary;
+    private DistributionSummary imageBytesSummary;
 
-    private void recordOutboxInsert(Runnable action, String eventType) {
+    @PostConstruct
+    public void initMetrics() {
+        this.outboxInsertTimer = Timer.builder("outbox.insert.latency")
+                .description("DB TX 종료~Outbox 저장 구간")
+                .tag("aggregate", "post")
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+
+        this.dbSaveTimer = Timer.builder("post.create.phase")
+                .tag("phase", "db.save")
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+
+        this.outboxSerializeTimer = Timer.builder("post.create.phase")
+                .tag("phase", "outbox.serialize")
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+
+        this.outboxSaveTimer = Timer.builder("post.create.phase")
+                .tag("phase", "outbox.save")
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+
+        this.imageUploadOneTimer = Timer.builder("post.create.phase")
+                .tag("phase", "image.upload.one")
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+
+        this.imageUploadAllTimer = Timer.builder("post.create.phase")
+                .tag("phase", "image.upload.all")
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+
+        this.totalTimer = Timer.builder("post.create.total")
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+
+        this.imageCountSummary = DistributionSummary.builder("post.images.count")
+                .register(meterRegistry);
+
+        this.imageBytesSummary = DistributionSummary.builder("post.images.bytes")
+                .register(meterRegistry);
+    }
+
+    private void recordOutboxInsert(Runnable action) {
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
             action.run();
         } finally {
-            sample.stop(
-                    Timer.builder("outbox.insert.latency")
-                            .description("DB TX 종료~Outbox 저장 구간")
-                            .tag("aggregate", "post")
-                            .tag("event", eventType)
-                            .publishPercentileHistogram()
-                            .register(meterRegistry)
-            );
+            sample.stop(outboxInsertTimer);
         }
-    }
-
-    private Timer phaseTimer(String name) {
-        return Timer.builder(name)
-                .publishPercentileHistogram()
-                .register(meterRegistry);
-    }
-
-    private Timer phaseTimer(String name, String tagKey, String tagVal) {
-        return Timer.builder(name)
-                .tag(tagKey, tagVal)
-                .publishPercentileHistogram()
-                .register(meterRegistry);
     }
 
     @Override
@@ -97,10 +130,9 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Transactional
+    @Transactional(timeout = 10)
     public CreatePostResult createPost(CreatePostCommand command) {
-        final long t0 = System.currentTimeMillis();
-        final Timer.Sample totalSample = Timer.start(meterRegistry); // 총합 타이머
+        final Timer.Sample totalSample = Timer.start(meterRegistry);
 
         Double latitude = null;
         Double longitude = null;
@@ -123,7 +155,7 @@ public class PostServiceImpl implements PostService {
                 .productImages(new ArrayList<>())
                 .build();
         Post savedPost = postRepository.save(post);
-        dbSave.stop(phaseTimer("post.create.phase", "phase", "db.save"));
+        dbSave.stop(dbSaveTimer);
 
         Timer.Sample outboxSerialize = Timer.start(meterRegistry);
         long version = savedPost.getUpdatedAt()
@@ -147,24 +179,22 @@ public class PostServiceImpl implements PostService {
         try {
             ob.setPayload(objectMapper.writeValueAsString(evt));
         } catch (Exception e) {
-            outboxSerialize.stop(phaseTimer("post.create.phase", "phase", "outbox.serialize"));
+            outboxSerialize.stop(outboxSerializeTimer);
             throw new RuntimeException("이벤트 직렬화 실패", e);
         }
-        outboxSerialize.stop(phaseTimer("post.create.phase", "phase", "outbox.serialize"));
+        outboxSerialize.stop(outboxSerializeTimer);
 
         ob.setVersion(version);
         ob.setCreatedAt(savedPost.getUpdatedAt());
         ob.setPublished(false);
 
         Timer.Sample outboxSave = Timer.start(meterRegistry);
-        recordOutboxInsert(() -> outboxRepo.save(ob), "UPSERT");
-        outboxSave.stop(phaseTimer("post.create.phase", "phase", "outbox.save"));
+        recordOutboxInsert(() -> outboxRepo.save(ob));
+        outboxSave.stop(outboxSaveTimer);
 
-        List<String> imageUrls = new ArrayList<>();
         List<MultipartFile> images = command.getProductImages() != null ? command.getProductImages() : List.of();
 
-        DistributionSummary.builder("post.images.count")
-                .register(meterRegistry).record(images.size());
+        imageCountSummary.record(images.size());
 
         long totalBytes = 0L;
         for (MultipartFile f : images) {
@@ -172,37 +202,50 @@ public class PostServiceImpl implements PostService {
                 totalBytes += (f != null ? f.getSize() : 0L);
             } catch (Exception ignore) {}
         }
-        DistributionSummary.builder("post.images.bytes")
-                .register(meterRegistry).record(totalBytes);
+        imageBytesSummary.record(totalBytes);
+
+        CreatePostResult result = postMapper.toCreateResult(savedPost, new ArrayList<>());
+
+        totalSample.stop(totalTimer);
 
         if (!images.isEmpty()) {
-            Timer.Sample imgAll = Timer.start(meterRegistry);
-            for (MultipartFile image : images) {
-                Timer.Sample imgOne = Timer.start(meterRegistry);
-                try {
-                    String imageUrl = s3ImageUploadPort.uploadProductImage(image, savedPost.getId());
-                    imageUrls.add(imageUrl);
-                    savedPost.addProductImage(imageUrl);
-                } catch (Exception e) {
-                    meterRegistry.counter("post.images.upload.error").increment();
-                    imgOne.stop(phaseTimer("post.create.phase", "phase", "image.upload.one"));
-                    throw new PostImageUploadException("게시물 이미지 업로드에 실패했습니다.", e);
-                }
-                imgOne.stop(phaseTimer("post.create.phase", "phase", "image.upload.one"));
-            }
-            imgAll.stop(phaseTimer("post.create.phase", "phase", "image.upload.all"));
+            uploadImagesAsync(savedPost, images);
         }
-
-        CreatePostResult result = postMapper.toCreateResult(savedPost, imageUrls);
-
-        long elapsed = System.currentTimeMillis() - t0;
-        if (elapsed >= SLOW_MS) {
-            log.warn("SLOW createPost total={}ms (db.save/outbox.serialize/outbox.save/image.upload.*), imgCount={}, imgBytes={}",
-                    elapsed, images.size(), totalBytes);
-        }
-        totalSample.stop(phaseTimer("post.create.total"));
 
         return result;
+    }
+
+    @Async
+    protected void uploadImagesAsync(Post post, List<MultipartFile> images) {
+        Timer.Sample imgAll = Timer.start(meterRegistry);
+        List<String> imageUrls = new ArrayList<>();
+
+        for (MultipartFile image : images) {
+            Timer.Sample imgOne = Timer.start(meterRegistry);
+            try {
+                String imageUrl = s3ImageUploadPort.uploadProductImage(image, post.getId());
+                imageUrls.add(imageUrl);
+
+                updatePostWithImage(post.getId(), imageUrl);
+
+            } catch (Exception e) {
+                meterRegistry.counter("post.images.upload.error").increment();
+                imgOne.stop(imageUploadOneTimer);
+                log.error("게시물 이미지 비동기 업로드 실패: postId={}, error={}", post.getId(), e.getMessage(), e);
+            }
+            imgOne.stop(imageUploadOneTimer);
+        }
+        imgAll.stop(imageUploadAllTimer);
+
+        log.info("게시물 이미지 비동기 업로드 완료: postId={}, imageCount={}", post.getId(), imageUrls.size());
+    }
+
+    @Transactional(timeout = 5)
+    protected void updatePostWithImage(Long postId, String imageUrl) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new NoSuchPostException("게시물을 찾을 수 없습니다: " + postId));
+        post.addProductImage(imageUrl);
+        postRepository.save(post);
     }
 
     @Override
@@ -226,7 +269,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Transactional
+    @Transactional(timeout = 5)
     public boolean likePost(Long postId, Long memberId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
@@ -239,7 +282,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Transactional
+    @Transactional(timeout = 5)
     public boolean unlikePost(Long postId, Long memberId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
@@ -273,7 +316,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Transactional
+    @Transactional(timeout = 10)
     public UpdatePostResult updatePost(UpdatePostCommand command) {
         Post post = postRepository.findById(command.getPostId())
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + command.getPostId() + "인 게시물이 존재하지 않습니다."));
@@ -322,10 +365,13 @@ public class PostServiceImpl implements PostService {
         ob.setCreatedAt(updatedPost.getUpdatedAt());
         ob.setPublished(false);
 
-        recordOutboxInsert(() -> outboxRepo.save(ob), "UPSERT");
+        recordOutboxInsert(() -> outboxRepo.save(ob));
 
         List<String> imageUrls = new ArrayList<>();
-        if (command.getProductImages() != null && !command.getProductImages().isEmpty()) {
+
+        if (command.getProductImages() == null || command.getProductImages().isEmpty()) {
+            updatedPost.getProductImages().forEach(image -> imageUrls.add(image.getImageUrl()));
+        } else {
             updatedPost = Post.builder()
                     .id(updatedPost.getId())
                     .title(updatedPost.getTitle())
@@ -342,24 +388,17 @@ public class PostServiceImpl implements PostService {
 
             updatedPost = postRepository.save(updatedPost);
 
-            for (MultipartFile image : command.getProductImages()) {
-                try {
-                    String imageUrl = s3ImageUploadPort.uploadProductImage(image, updatedPost.getId());
-                    imageUrls.add(imageUrl);
-                    updatedPost.addProductImage(imageUrl);
-                } catch (Exception e) {
-                    throw new PostImageUploadException("게시물 이미지 업로드에 실패했습니다.", e);
-                }
+            List<MultipartFile> images = command.getProductImages();
+            if (!images.isEmpty()) {
+                uploadImagesAsync(updatedPost, images);
             }
-        } else {
-            updatedPost.getProductImages().forEach(image -> imageUrls.add(image.getImageUrl()));
         }
 
         return postMapper.toUpdateResult(updatedPost, imageUrls);
     }
 
     @Override
-    @Transactional
+    @Transactional(timeout = 10)
     public boolean deletePost(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchPostException("ID가 " + postId + "인 게시물이 존재하지 않습니다."));
@@ -387,7 +426,7 @@ public class PostServiceImpl implements PostService {
         ob.setCreatedAt(LocalDateTime.now());
         ob.setPublished(false);
 
-        recordOutboxInsert(() -> outboxRepo.save(ob), "DELETE");
+        recordOutboxInsert(() -> outboxRepo.save(ob));
 
         return true;
     }

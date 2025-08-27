@@ -10,7 +10,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -24,6 +25,7 @@ public class RedisCoalescer {
     private final MeterRegistry meterRegistry;
 
     private static final long TTL_SEC = 180;
+    private final ConcurrentMap<String, Long> trackedKeys = new ConcurrentHashMap<>();
 
     private Counter coalescerHit;
     private Counter coalescerMiss;
@@ -56,28 +58,43 @@ public class RedisCoalescer {
         }
         String store = jsons.wrap(version, payload);
         redisTemplate.opsForValue().set(key, store, TTL_SEC, TimeUnit.SECONDS);
+        trackedKeys.put(key, System.currentTimeMillis() + (TTL_SEC * 1000));
         coalescerMiss.increment();
     }
 
-    private String KEY(Long id) { return String.format(KEY_FMT, id); }
+    private String KEY(Long id) {
+        return String.format(KEY_FMT, id);
+    }
 
     @Scheduled(fixedDelay = 30000)
     public void flushNearExpiry() {
-        Set<String> keys = redisTemplate.keys("idx:post:*");
-        if (keys == null) return;
-        for (String k : keys) {
-            Long ttl = redisTemplate.getExpire(k);
-            if (ttl != null && ttl <= 30) {
-                String v = redisTemplate.opsForValue().get(k);
-                if (v != null) {
-                    String payload = jsons.readPayload(v);
-                    sqsPublisher.sendUpsert(payload);
-                    redisTemplate.delete(k);
-                    coalescerFlushed.increment();
-                    if (ttl >= 0) ttlAtFlush.record(ttl);
-                    log.info("TTL 만료 임박 key 플러시 완료: {}", k);
+        long currentTime = System.currentTimeMillis();
+        long flushThreshold = 30 * 1000;
+
+        trackedKeys.entrySet().removeIf(entry -> {
+            String key = entry.getKey();
+            long expiryTime = entry.getValue();
+
+            if (currentTime >= expiryTime - flushThreshold) {
+                try {
+                    Long ttl = redisTemplate.getExpire(key);
+                    if (ttl != null && ttl > 0 && ttl <= 30) {
+                        String value = redisTemplate.opsForValue().get(key);
+                        if (value != null) {
+                            String payload = jsons.readPayload(value);
+                            sqsPublisher.sendUpsert(payload);
+                            redisTemplate.delete(key);
+                            coalescerFlushed.increment();
+                            ttlAtFlush.record(ttl);
+                            log.info("TTL 만료 임박 key 플러시 완료: {}", key);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Key {} 플러시 중 오류: {}", key, e.getMessage());
                 }
+                return true;
             }
-        }
+            return false;
+        });
     }
 }
