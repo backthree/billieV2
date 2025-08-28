@@ -8,7 +8,6 @@ spring:
       maximum-pool-size: 30
       idle-timeout: 600000
       register-mbeans: true
-      metric-registry: hikariMetricRegistry
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
