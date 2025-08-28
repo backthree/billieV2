@@ -7,6 +7,8 @@ spring:
     hikari:
       maximum-pool-size: 30
       idle-timeout: 600000
+      register-mbeans: true
+      metric-registry: hikariMetricRegistry
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -15,6 +17,7 @@ spring:
       hibernate:
         default_batch_fetch_size: 1000
         dialect: org.hibernate.dialect.MySQLDialect
+        generate_statistics: true
     defer-datasource-initialization: true
     show-sql: false
     open-in-view: false
@@ -28,6 +31,13 @@ spring:
       port: 6379
       ssl:
         enabled: true
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 5000ms
     mongodb:
       uri: mongodb://localhost:27017/nextdoor_chat
   elasticsearch:
@@ -83,10 +93,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,threaddump,heapdump
   endpoint:
     health:
       show-details: always
+    metrics:
+      enabled: true
   metrics:
     tags:
       app: billie
@@ -95,8 +107,22 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
+        tomcat.threads.busy: true
+        tomcat.threads.utilization: true
       sla:
         http.server.requests: 50ms,100ms,250ms,500ms,1s,2s,5s
+        tomcat.threads.utilization: 50,70,80,90
+    enable:
+      hikaricp: true
+      tomcat: true
+      jvm: true
+      process: true
+      system: true
+      redis: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 ---
 
@@ -111,17 +137,33 @@ server:
   port: 8081
   tomcat:
     connection-timeout: 30s
-    max-threads: 300
+    threads:
+      max: 300
+      min-spare: 20
     accept-count: 200
+    max-connections: 8192
+    accesslog:
+      enabled: false
 
 logging:
   level:
     root: DEBUG
+    org.apache.tomcat.util.threads: INFO
+    org.apache.coyote: INFO
+    com.zaxxer.hikari: DEBUG
+    com.nextdoor.nextdoor.config.monitoring: INFO
 
 management:
-  prometheus:
-    metrics:
-      export:
+  metrics:
+    enable:
+      tomcat: true
+      hikaricp: true
+    jvm:
+      threads:
+        enabled: true
+      memory:
+        enabled: true
+      gc:
         enabled: true
 
 ---
@@ -136,8 +178,41 @@ spring:
     scheduling:
       pool:
         size: 3
+        thread-name-prefix: "scheduling-"
+        await-termination: true
+        await-termination-seconds: 20
+    execution:
+      pool:
+        core-size: 5
+        max-size: 15
+        queue-capacity: 100
+        thread-name-prefix: "async-"
+        keep-alive: 60s
 
 logging:
   level:
     root: ERROR
     com.nextdoor.nextdoor.domain.post.search: WARN
+    org.springframework.scheduling: WARN
+    org.springframework.core.task: WARN
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      enabled: true
+    metrics:
+      enabled: true
+  metrics:
+    tags:
+      app: billie
+      svc: worker
+      env: prod
+    enable:
+      jvm: true
+      process: true
+      system: true
