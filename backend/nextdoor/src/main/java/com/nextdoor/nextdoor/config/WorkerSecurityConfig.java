@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@Profile({"worker", "outbox"})
+@Profile("worker")
 public class WorkerSecurityConfig {
 
     @Bean
