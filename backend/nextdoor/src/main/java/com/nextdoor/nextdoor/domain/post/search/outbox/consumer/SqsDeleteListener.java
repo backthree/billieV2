@@ -15,7 +15,7 @@ public class SqsDeleteListener {
 
     private final DeleteMessageConsumer consumer;
 
-    @SqsListener("${sqs.queue.delete}")
+    @SqsListener(value = "${sqs.queue.delete}", acknowledgementMode = "MANUAL")
     public void onMessage(String message, Acknowledgement ack) {
         try {
             log.debug("삭제 메시지 수신: {}", message);

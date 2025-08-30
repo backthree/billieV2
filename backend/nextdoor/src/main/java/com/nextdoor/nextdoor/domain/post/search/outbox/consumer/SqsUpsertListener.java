@@ -15,7 +15,7 @@ public class SqsUpsertListener {
 
     private final UpsertMessageConsumer consumer;
 
-    @SqsListener("${sqs.queue.upsert}")
+    @SqsListener(value = "${sqs.queue.upsert}", acknowledgementMode = "MANUAL")
     public void onMessage(String message, Acknowledgement ack) {
         try {
             log.debug("업서트 메시지 수신: {}", message);
