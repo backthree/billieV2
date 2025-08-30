@@ -18,7 +18,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 @Profile({"worker", "outbox"})
 public class WorkerSecurityConfig {
 
-    @Bean
+    @Bean("workerPasswordEncoder")
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
