@@ -15,7 +15,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
 @EnableWebSecurity
-@Profile("worker")
+@Profile({"worker", "outbox"})
 public class WorkerSecurityConfig {
 
     @Bean

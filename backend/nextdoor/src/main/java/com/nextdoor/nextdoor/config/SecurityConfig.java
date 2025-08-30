@@ -23,7 +23,7 @@ import org.springframework.web.filter.CorsFilter;
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
-@Profile("!worker")
+@Profile({"!worker", "!outbox"})
 public class SecurityConfig {
 
     private final OAuth2AuthorizationRequestBasedOnCookieRepository oAuth2AuthorizationRequestBasedOnCookieRepository;
