@@ -4,9 +4,6 @@ spring:
   transaction:
     default-timeout: 100
   datasource:
-    hikari:
-      maximum-pool-size: 30
-      idle-timeout: 600000
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -110,6 +107,15 @@ spring:
     async:
       request-timeout: 30s
 
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 30
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 5000
+
 server:
   port: 8081
   tomcat:
@@ -146,3 +152,35 @@ logging:
   level:
     root: ERROR
     com.nextdoor.nextdoor.domain.post.search: WARN
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: "outbox"
+  main:
+    web-application-type: none
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 18
+      minimum-idle: 18
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 5000
+
+  task:
+    execution:
+      thread-name-prefix: outbox-async-
+      pool:
+        core-size: 2
+        max-size: 2
+        queue-capacity: 200
+    scheduling:
+      pool.size: 3
+
+logging.level:
+  root: ERROR
+  com.nextdoor.nextdoor.domain.post.search: WARN
