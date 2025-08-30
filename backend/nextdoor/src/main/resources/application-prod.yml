@@ -144,7 +144,12 @@ spring:
   main:
     web-application-type: none
     autoconfigure:
-      exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      exclude:
+        - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+        - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+        - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+        - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+        - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
   task:
     scheduling:
       pool:
@@ -164,7 +169,12 @@ spring:
   main:
     web-application-type: none
     autoconfigure:
-      exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      exclude:
+        - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+        - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+        - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+        - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+        - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
